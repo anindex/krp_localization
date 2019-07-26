@@ -1,10 +1,7 @@
 <launch>
   <arg name="robot" default="youbot"/>
   <arg name="world" default="playground"/>
-  <arg name="gui" value="true"/>
-  <arg name="initX" default="0.0"/>
-  <arg name="initY" default="0.0"/>
-  <arg name="initZ" default="0.1"/>
+  <arg name="gui" default="true"/>
 
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="world_name" value="$(find auto_localization)/worlds/$(arg world).world"/> <!-- Note: the world_name is with respect to GAZEBO_RESOURCE_PATH environmental variable -->
@@ -15,16 +12,10 @@
     <arg name="debug" value="false"/>
   </include>
 
-  <include file="$(find auto_localization)/launch/includes/$(arg robot).launch.xml"/>
+  <include file="$(find auto_localization)/launch/includes/$(arg robot).launch.xml">
+    <arg name="initX" value="0.0"/>
+    <arg name="initY" value="0.0"/>
+    <arg name="initZ" value="0.0"/>
+  </include>
 
-  <!-- Gazebo model spawner -->
-  <node pkg="gazebo_ros" type="spawn_model" name="spawn_robot" respawn="false" output="screen"
-    args="-param robot_description
-          -urdf
-          -x $(arg initX)
-          -y $(arg initY)
-          -z $(arg initZ)
-          -model $(arg robot)">
-  </node>
-  
 </launch>

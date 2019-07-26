@@ -1,16 +1,35 @@
 <launch>
+  <arg name="initX" default="0.0"/>
+  <arg name="initY" default="0.0"/>
+  <arg name="initZ" default="0.0"/>
+
+  <group ns="youbot">
+    <param name="robot_description" command="$(find xacro)/xacro --inorder $(find youbot_description)/robots/youbot.urdf.xacro" />
+
+    <!-- Loading param for controllers -->
+    <rosparam file="$(find auto_localization)/config/gazebo_ros_control.yaml" command="load" />
+    <rosparam file="$(find auto_localization)/config/youbot_base.yaml" command="load" />
+
+    <!-- Gazebo model spawner -->
+    <node pkg="gazebo_ros" type="spawn_model" name="spawn_robot" respawn="false" output="screen"
+      args="-param robot_description
+            -urdf
+            -x $(arg initX)
+            -y $(arg initY)
+            -z $(arg initZ)
+            -model youbot">
+    </node>
+
+    <!-- Controller spawner -->
+    <node pkg="controller_manager" type="spawner" name="youbot_base_spawner" args="--namespace /youbot youbot_base" respawn="false" output="screen" />
+
+    <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+      <param name="publish_frequency" type="double" value="30.0" />
+    </node>
+  </group>
+
+  <!-- just a quick fix for controller spawner to find the robot description, this issue still persists in ros-control https://github.com/ros-simulation/gazebo_ros_pkgs-->
   <param name="robot_description" command="$(find xacro)/xacro --inorder $(find youbot_description)/robots/youbot.urdf.xacro" />
-
-  <!-- Loading param for controllers -->
-  <rosparam file="$(find auto_localization)/config/gazebo_ros_control.yaml" command="load" />
-  <rosparam file="$(find auto_localization)/config/youbot_base.yaml" command="load" />
-
-  <!-- Controller spawner -->
-  <node pkg="controller_manager" type="spawner" name="youbot_base_spawner" args="youbot_base" respawn="false" output="screen" />
-
-  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
-    <param name="publish_frequency" type="double" value="30.0" />
-  </node>
 
   <!-- Odometry estimator -->
   <!-- <node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf">
