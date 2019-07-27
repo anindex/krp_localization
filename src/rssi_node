@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+#TODO: change Device to accept st as float not str
+from __future__ import print_function
+import sys
+import rospy
+from std_msgs.msg import String
+from rssi.devices import WifiDevice
+import thread
+from krp_localization.msg import RSSI, RSSIData
+
+class RSSINode():
+    def __init__(self):
+
+        self.pub = rospy.Publisher('rssi',RSSIData,queue_size=10)
+
+        self.freq = rospy.get_param('~freq', 1)
+
+        #RSSI device init
+        self.device = WifiDevice()
+        r = rospy.Rate(self.freq)
+
+        rospy.loginfo("RSSI Node started, publishing RSSI at rate {} Hz".format(self.freq))
+
+        while not rospy.is_shutdown():
+            now = rospy.get_rostime()
+            data = self.device.probe_signal()
+
+            mess = RSSIData()
+            mess.start_time_ns = now.nsecs
+            mess.macs = list(data.keys())
+            mess.rssi = list(data.values())
+
+            self.pub.publish(mess)
+            r.sleep()
+
+if __name__ == '__main__':
+    rospy.init_node('rssi_node',anonymous=True)
+    try:
+        ra = RSSINode()
+    except rospy.ROSInterruptException:
+        print('Could not initialize rssi node')
