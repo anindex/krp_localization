@@ -1,0 +1,11 @@
+<launch>
+    <arg name="visualization"    default="true" />
+
+    <node name="recorder" pkg="rosbag" type="record" args="-q amcl_pose scan rssi odom cmd_vel -O $(arg bag_path)/$(arg bag_name).bag" />
+
+
+    <!-- Viewers -->
+    <group if="$(arg visualization)">
+        <node name="rviz" pkg="rviz" type="rviz"  args="-d $(find rss)/launch/wlrf.rviz"/>
+    </group>
+</launch>
