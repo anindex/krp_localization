@@ -11,14 +11,14 @@ import rospkg
 
 #ros messages
 from std_msgs.msg import Float64MultiArray
-from geometry_msgs.msg import PoseWithCovarianceStamped
+from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, PoseArray
 from krp_localization.msg import RSSIData
 
 #Services
 from krp_localization.srv import RSSILocalization
 
 from localization.models import hGP
-from util.others import mesh
+from util.structures import mesh, pose_from_array
 from data_preprocessing import PreprocessedData
 
 class RSSILocalizationServer():
@@ -79,7 +79,7 @@ class RSSILocalizationServer():
 
     def handle_loc(self, req):
         try:
-            loc = loc_server_handle(self.model,req.rss,req.nsamples,req.pose_array,ns=self.ns)
+            loc = self.sample_from_model(req.rssi, req.nsamples, req.pose_array, ns=self.ns)
             if loc is None:
                 rospy.logerr('[handle_loc] Loc returned None')
                 return None
@@ -93,6 +93,86 @@ class RSSILocalizationServer():
         self.seq += 1
 
         return loc
+
+    def sample_from_model(self, raw_rssi, nsamples, pose_array, **kwargs):
+    """
+    Handle for the location server service
+
+    Inputs
+        raw_rss         [RssData] Received RSSI message (rss.msg RssData)
+        nsamples        [Int] with the number of desired samples,
+                        if nsamples==1 the most likely sample is returned
+        pose_array      [PoseArray] if empty, the loc_server samples the model and
+                        returns a PoseArray made of those samples.
+                        If not, the samples in the PoseArray are used
+    Optional inputs
+        x_min,x_max,    [Floats] limits used for the sampling algorithm and to calculate
+        y_min,y_max,spn the most likely sample
+
+    Returns
+        pose_array      Original pose_array if provided, or pose_array made of samples drawn
+                        from model
+        weights         Weights (likelihood) of pose_array for the model given the RssData
+                        provided
+    """
+
+    ns = kwargs.get('ns','')
+
+    x_min = self.model.xmin
+    x_max = self.model.xmax
+    y_min = self.model.ymin
+    y_max = self.model.ymax
+    spn   = self.model.Xtest_num
+
+    frame = kwargs.get('parent_frame','map')
+
+    if not isinstance(model,SensorModel):
+        rospy.logwarn('Provided model is not a valid SensorModel')
+        return [pose_array, list(), list()]
+
+    rssi_data  = PreprocessedData(raw_rssi, ref_mac_dict=self.model.all_mac_dict,
+                                            flag_fuse_measurements=True,
+                                            filter_fuse_measurements=len(raw_rssi)) # fuse all into 1 measurement and average
+
+    rospy.loginfo('Model accepts {} acccess points out of {}'.format(rssi_data.data['Y'].shape[1], len(raw_rssi[0].mac_address)))
+    rospy.loginfo('Request {} nsamples and pose array len: {}'.format(nsamples, len(pose_array.poses)))
+
+    temp_x  = np.linspace(x_min,x_max,spn)
+    temp_y  = np.linspace(y_min,y_max,spn)
+    Xtest   = mesh(temp_x,temp_y)
+    prob_mesh = self.model.jointpdf(Xtest,rss.data['Y'])
+
+
+    # if nsamples differs from pose_array size - e.g., empty pose_array nsamples are drawn from the current model's posterior given the rss message
+    if not pose_array or nsamples != len(pose_array.poses):
+        pose_array = PoseArray()
+        pose_array.header.stamp = rospy.get_rostime()
+        pose_array.header.frame_id = frame
+        pose_array.poses = list()
+
+        try:
+            measurement = rssi_data.data['Y']
+            samples     = self.model.sample(measurement,span=(x_min,x_max,y_min,y_max),
+                                                        nsamples=nsamples,
+                                                        K=50,
+                                                        batch=1)
+            pose_array.poses = [pose_from_array(x) for x in samples]
+        except:
+            e = sys.exc_info()[0]
+            rospy.logerr('Sampling failed: '+str(e))
+            return None
+
+    # if nsamples equals the number of poses in pose_array use those poses and compute weights
+    else:
+        samples = [[p.position.x, p.position.y] for p in pose_array.poses]
+        samples = np.asarray(samples)
+
+    # compute the weights as the likelihood of the samples
+    weights = self.model.jointpdf(samples, rssi_data.data['Y'])
+    weights.tolist()
+    prob_mesh.flatten().tolist()
+
+    return [pose_array, weights, prob_mesh]
 
 if __name__ == '__main__':
     rssi_loc = RSSILocalizationServer()
