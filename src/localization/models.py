@@ -1,8 +1,8 @@
 import GPy
-from utils import data_validation
 import likelihood as lh
 import numpy as np
 import sampling
+from utils.data_processing import validate_data
 from utils.structures import mesh
 from pathloss import FLog
 import scipy
@@ -52,7 +52,7 @@ class GPcore(SensorModel):
         super(GPcore,self).__init__()
         #Main Data
         self.name = 'GPcore'
-        self.data = data_validation.data_structure(data)
+        self.data = validate_data(data)
         self.all_mac_dict   = kwargs.get('all_mac_dict',None)
         self.ndp,self.nap   = self.data['Y'].shape  #data points, #access points
         #check data

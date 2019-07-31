@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+from __future__ import print_function
+
+import sys
+import numpy as np
+import time
+import copy
+import rospy
+import pickle
+import rospkg
+
+#ros messages
+from std_msgs.msg import Float64MultiArray
+from geometry_msgs.msg import PoseWithCovarianceStamped
+from krp_localization.msg import RSSIData
+
+#Services
+from krp_localization.srv import RSSILocalization
+
+from localization.models import hGP
+from util.others import mesh
+from data_preprocessing import PreprocessedData
+
+class RSSILocalizationServer():
+    def __init__(self):
+
+        rospy.init_node('rssi_localization_server',anonymous=True)  #ROS node init
+
+        self.seq = 0
+        self.ns = rospy.get_namespace()
+        rospack = rospkg.RosPack()
+        train_data_path = rospy.get_param('~train_data_path', rospack.get_path('krp_localization') + "/data")
+        train_data_fuse = rospy.get_param('~train_data_fuse', 5)
+
+        trained_model_path = rospy.get_param('~trained_model_path', None)
+
+        if trained_model_path:
+            # Load model
+            data_empty = {'X':np.asarray([[1,1]]),'Y':np.asarray([1]),'Var':np.asarray([1])}
+            self.model = hGP(data_empty,verbose=True)
+            self.model.load(filepath=self.trained_model_path)
+
+        else:
+            rospy.loginfo('Loading train data path: {}'.format(train_data_path))
+            raw_rss, poses, _ = load_data(file_name=train_data_path) #odometry is not needed
+
+
+            traindata = PreprocessedData(raw_rss, poses                    = poses,
+                                                  filter_fuse_measurements = train_data_fuse)
+
+
+            distance = np.sum(traindata.data['X'][1:]**2+traindata.data['X'][:-1]**2
+                -2*traindata.data['X'][1:]*traindata.data['X'][:-1],axis=1)**.5
+            avg_distance = np.mean(distance)
+
+            rospy.loginfo('Number of measurements:        \t: ', traindata.nm)
+            rospy.loginfo('Number of macs considered (all)\t: ', traindata.data['Y'].shape[1])
+            rospy.loginfo('Average distance between points\t: ', np.round(avg_distance,2))
+
+            #Train model
+            rospy.loginfo('Training model')
+            self.model = hGP(traindata.data,all_mac_dict=traindata.all_mac_dict)
+            self.model.optimize()
+            rospy.loginfo('Model trained successfully')
+
+        self.loc_server = rospy.Service(self.ns+'/loc_server', RSSILocalization, self.handle_loc)
+
+        #write to param server
+        rospy.set_param('map_limits',{'x_min':self.model.xmin,
+                                      'x_max':self.model.xmax,
+                                      'y_min':self.model.ymin,
+                                      'y_max':self.model.ymax,
+                                      'spn':self.model.Xtest_num})
+
+        r = rospy.Rate(1)  #1Hz
+        while not rospy.is_shutdown():
+            r.sleep()
+
+
+    def handle_loc(self, req):
+        try:
+            loc = loc_server_handle(self.model,req.rss,req.nsamples,req.pose_array,ns=self.ns)
+            if loc is None:
+                rospy.logerr('[handle_loc] Loc returned None')
+                return None
+        except:
+            e = sys.exc_info()[0]
+            rospy.logerr('[handle_loc] Localization failed: '+str(e))
+            return None
+
+        loc[0].header.frame_id = self.ns+'/map'
+        loc[0].header.seq = self.seq
+        self.seq += 1
+
+        return loc
+
+if __name__ == '__main__':
+    rssi_loc = RSSILocalizationServer()

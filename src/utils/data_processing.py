@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 
-def data_structure(din):
+def validate_data(din):
     """
     Script to verify if din is a dictionary compatible with Localization classes and functions.
     If not compatible, an error is raised. Else, a formated (if necessary) deep copy is returned

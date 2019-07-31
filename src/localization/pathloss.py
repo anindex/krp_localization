@@ -4,7 +4,7 @@ import scipy.stats as stats
 import copy
 import levmar
 
-from utils import data_validation
+from utils.data_processing import validate_data
 from utils.maths import euclidean_squared
 
 class FLog(object):
@@ -26,7 +26,7 @@ class FLog(object):
 
     """
     def __init__(self,data,**kwargs):
-        self.data    = data_validation.data_structure(data)
+        self.data    = validate_data(data)
         self.debug   = kwargs.get('debug',0)
         self.name    = 'Log Function with levmar optimization'
         #self.params  = kwargs.get('params_0',None)
@@ -44,7 +44,7 @@ class FLog(object):
         if dataTest is None:
             data = self.data
         else:
-            data  = data_validation.data_structure(dataTest)
+            data  = validate_data(dataTest)
 
         Ys  = self.mean_val(data['X']) #bounded estimation
         log_prob = stats.norm.logpdf(Ys,loc=data['Y'],scale=data['Var']**0.5)
@@ -66,7 +66,7 @@ class FLog(object):
         if dataTest is None:
             data = self.data
         else:
-            data  = data_validation.data_structure(dataTest)
+            data  = validate_data(dataTest)
 
         nll_f = self.nll(dataTest=data)
         nll_z = -np.sum(stats.norm.logpdf(np.zeros_like(data['Y']),loc=data['Y'],
