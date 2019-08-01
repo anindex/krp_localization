@@ -20,14 +20,14 @@ from utils.load import save
 class RecordData():
     def __init__(self):
         rospy.init_node('record_data_node',anonymous=True)  #ROS node init
-        rospack = RosPack()
+        rospack = rospkg.RosPack()
 
         #ROS PARAMSERVER
         self.ns = rospy.get_namespace()
         self.file_name_prefix = rospy.get_param('~file_name_prefix', "floor2")
         self.file_path = rospack.get_path('krp_localization') + '/data/'
 
-        rospy.loginfo('Save data in folder: ',self.filepath)
+        rospy.loginfo('Save data in folder: {}'.format(self.file_path))
 
         #lists
         self.rssi = list()
