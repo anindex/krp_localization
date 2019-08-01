@@ -1,9 +1,9 @@
-RSSIData                signals
-uint16                  nsamples
-geometry_msgs/PoseArray pose_array
+RSSIData[]                rssi
+uint16                    nsamples
+geometry_msgs/PoseArray   pose_array
 
 ---
 
-geometry_msgs/PoseArray pose_array
-float32[]               weights
-float32[]               prob_mesh
+geometry_msgs/PoseArray   pose_array
+float32[]                 weights
+float32[]                 prob_mesh

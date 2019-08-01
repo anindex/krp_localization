@@ -1,2 +1,2 @@
-# auto-localization
-Approaches to solve robot-kidnapped problem using landmarks
+# Kidnapped robot problem localization
+Approaches to solve kidnapped robot problem using various techniques

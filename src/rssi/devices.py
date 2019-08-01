@@ -11,7 +11,7 @@ class WifiDevice:
     Class WifiDevice
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.probe_completed = True
 
     def probe_signal(self):
