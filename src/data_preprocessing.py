@@ -387,8 +387,8 @@ class PreprocessedData():
         else:
             dataX = None
 
-        dataY   = np.asarray([m.transform2vector(self.all_mac_dict,'mean') for m in self.measurements]) / 100 #scaled Y
-        dataVar = np.asarray([m.transform2vector(self.all_mac_dict,'var') for m in self.measurements]) / 100 ** 2. #scaled Var
+        dataY   = np.asarray([m.transform2vector(self.all_mac_dict,'mean') for m in self.measurements]) / 100.0 #scaled Y
+        dataVar = np.asarray([m.transform2vector(self.all_mac_dict,'var') for m in self.measurements]) / 100.0 ** 2. #scaled Var
         dataN   = np.asarray([m.transform2vector(self.all_mac_dict,'len') for m in self.measurements])
 
         self.data = {'X':dataX,'Y':dataY,'Var':dataVar,'n':dataN}

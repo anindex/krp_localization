@@ -142,7 +142,7 @@ class RSSILocalizationServer():
     temp_x  = np.linspace(x_min,x_max,spn)
     temp_y  = np.linspace(y_min,y_max,spn)
     Xtest   = mesh(temp_x,temp_y)
-    prob_mesh = self.model.jointpdf(Xtest,rss.data['Y'])
+    prob_mesh = self.model.jointpdf(Xtest,rssi_data.data['Y'])
 
 
     # if nsamples differs from pose_array size - e.g., empty pose_array nsamples are drawn from the current model's posterior given the rss message
