@@ -44,7 +44,7 @@ class Measurement():
         self.time = long(mdata.start_time_ns)
         self.nap = len(mdata.macs)
         self.mac_dict = {mdata.macs[i]:i for i in np.arange(self.nap)}
-        self.rssi  = [[s] for s in mdata.rssi]
+        self.rssi  = [s.rssi for s in mdata.rssi]
 
         #Filter
         self.filtered_rssi = list()

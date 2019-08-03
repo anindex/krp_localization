@@ -16,7 +16,7 @@ def load_data(**kwargs):
     """
     Load a previously pickled data from file_path/file_name.
     Optional Parameters [default]
-        file_name ['b3test1']: Core name of the files to get data from -> <file_name>rss.p and <file_name>poses.p
+        file_name ['test']: Core name of the files to get data from -> <file_name>rss.p and <file_name>poses.p
         file_path ['~/catkin_ws/src/tests/bags/processed_data/']: Path where to find files
     """
     rospack = rospkg.RosPack()

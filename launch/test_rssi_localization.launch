@@ -1,0 +1,37 @@
+<launch>
+    <arg name="visualization"    default="true" />
+
+
+    <!-- wifi parameters -->
+    <arg name="min_particles"    default="100" />
+    <arg name="max_particles"    default="5000" />
+
+    <arg name="map_path"         default="$(find krp_localization)/maps/"/>
+    <arg name="map_name"         default="test"/>
+    <arg name="use_lrfmap"       default="false"/>
+
+    <arg name="train_data_prefix"  default="test"/>
+    <arg name="train_data_fuse"  default="5"/>
+
+    <!-- <arg name="map_xmin"         default="-25" />
+    <arg name="map_xmax"         default="55"  />
+    <arg name="map_ymin"         default="-60" />
+    <arg name="map_ymax"         default="20"  />
+    <arg name="map_spn"          default="50"  /> -->
+
+    <!-- Processing nodes -->
+    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)$(arg map_name).yaml" />
+
+    <node name="rssi_localization_server" pkg="krp_localization" type="rssi_localization_server">
+        <param name="train_data_prefix"   value="$(arg train_data_prefix)" />
+        <param name="train_data_fuse"   value="$(arg train_data_fuse)" />
+        <param name="use_lrfmap"     value="$(arg use_lrfmap)"/>
+        <param name="map_name"       value="$(arg map_name)"/>
+        <param name="map_path"       value="$(arg map_path)"/>
+    </node>
+
+    <!-- <group if="$(arg visualization)">
+        <node name="rviz" pkg="rviz" type="rviz"  args="-d $(find rss)/launch/wlrf.rviz"/>
+    </group> -->
+
+</launch>
