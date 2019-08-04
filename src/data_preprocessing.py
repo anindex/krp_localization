@@ -4,8 +4,9 @@ import sys
 import numpy as np
 import pickle
 import copy
+
 #Data types
-from krp_localization.msg import RSSIData
+from krp_localization.msg import RSSIData, RssData
 
 
 
@@ -30,21 +31,29 @@ class Measurement():
             rssi_len
             transform2vector
         """
-        assert type(mdata) is RSSIData
-
         #filter params
         self.flag_mode_filter = kwargs.get('flag_mode_filter', True)
         self.filter_factor    = kwargs.get('filter_rssi_factor', 0.3) #30% lower than mode count
 
+        self.flag_negative_db = kwargs.get('flag_negative_db', False)
+
         #measurement param
-        self.min_rssi  = kwargs.get('min_rssi', 0)
+        self.min_rssi  = kwargs.get('min_rssi', 0 if not self.flag_negative_db else -100)
         self.prior_var = kwargs.get('prior_var', 5)
 
         #retrieve mdata
-        self.time = long(mdata.start_time_ns)
-        self.nap = len(mdata.macs)
-        self.mac_dict = {mdata.macs[i]:i for i in np.arange(self.nap)}
-        self.rssi  = [s.rssi for s in mdata.rssi]
+        if not self.flag_negative_db:
+            assert type(mdata) is RSSIData
+            self.time = long(mdata.start_time_ns)
+            self.nap = len(mdata.macs)
+            self.mac_dict = {mdata.macs[i]:i for i in np.arange(self.nap)}
+            self.rssi  = [s.rssi for s in mdata.rssi]
+        else:
+            #assert type(mdata) is RssData
+            self.time = long(mdata.time_start_ns+long(mdata.duration_ms*1000))
+            self.nap = len(mdata.mac_address)
+            self.mac_dict = {mdata.mac_address[i]:i for i in np.arange(self.nap)}
+            self.rssi  = [list(data.rss) for data in mdata.data]
 
         #Filter
         self.filtered_rssi = list()
@@ -63,8 +72,9 @@ class Measurement():
             min_repetition_rss [class min_repetition_rss]
         """
 
-        filter_factor       = kwargs.get('filter_rss_factor', self.filter_factor) #30% lower than mode
+        filter_factor       = kwargs.get('filter_rssi_factor', self.filter_factor) #30% lower than mode
 
+        self.filtered_rssi = []
         for rss in self.rssi:
 
             unique_rss = list(set(rss)) #list of unique rss values
@@ -100,17 +110,12 @@ class Measurement():
         """
         Outputs variance of rss measurements
         """
-        if self.flag_mode_filter:
-            rssi = self.filtered_rssi
-        else:
-            rssi = self.rssi
-
         #output rss variance if len(rss) > 1 if not output the default variance
         #var = np.asarray([np.var(s) if (len(s)>1) else self.prior_var for s in selected_rss])
         #if each sample is considered to be taken from a noisy function with gaussian noise of the same variance,
         #then the variance of a sequence of samples becomes prior_noise_variace/n_samples
         #if rss_len is zero, the prior variance is assigned hence, in practice the min_rss_len = 1
-        var = self.prior_var/np.clip(self.rss_len(),1,np.inf)
+        var = self.prior_var/np.clip(self.rssi_len(),1,np.inf)
 
         return var #np.clip(var,2e-5,np.inf)
 
@@ -171,7 +176,7 @@ class Measurement():
         result.mac_dict.update({to_add_keys[i]:(i+result.nap) for i in range(len(to_add_keys))})
         result.nap = len(result.mac_dict)
 
-        result.rssi = result.rssi + [[] for i in range(len(to_add_keys))]
+        result.rssi = result.rssi + [[]] * len(to_add_keys)
         for other_mac,other_index in other.mac_dict.iteritems():
             index = result.mac_dict[other_mac]
             result.rssi[index] = result.rssi[index]+other.rssi[other_index]
@@ -236,27 +241,32 @@ class PreprocessedData():
         self.poses_type = kwargs.get('poses_type','PoseWithCovarianceStamped')
         ref_mac_dict    = kwargs.get('ref_mac_dict', None)
 
+        self.flag_negative_db = kwargs.get('flag_negative_db', False)
+
         flag_min_distance       = kwargs.get('flag_min_distance', False)
         flag_fuse_measurements  = kwargs.get('flag_fuse_measurements', True)
         flag_min_points_per_AP  = kwargs.get('flag_fuse_min_points_per_AP', False)
+        flag_mode_filter        = kwargs.get('flag_mode_filter', True)
 
-        self.measurements = [Measurement(m) for m in raw_measurements]
-        self.compute_pose_correspondences(raw_measurements)
+        self.measurements = [Measurement(m, flag_mode_filter=flag_mode_filter, flag_negative_db=self.flag_negative_db) for m in raw_measurements]
+        self.compute_pose_correspondences()
 
         if not self.poses:
-            rospy.logwarn('No poses will associate to RSSI Measurements')
+            print('No poses will associate to RSSI Measurements')
 
         if flag_min_distance:
             self.filter_min_distance = kwargs.get('filter_min_distance',0.05) #min distance between points in [m]
             if self.poses:
                 self.filter_distance()
             else:
-                rospy.logwarn('Min distance filter cannot perform on non-poses data')
+                print('Min distance filter cannot perform on non-poses data')
 
         if flag_fuse_measurements:
             self.filter_fuse_measurements = kwargs.get('filter_fuse_measurements', 3) #number of consecutive measurements to fuse
             self.filter_fuse()
 
+        if (flag_fuse_measurements or flag_min_distance and self.poses) and flag_mode_filter:
+            self.filter_mode()
 
         self.nm = len(self.measurements)     #number of valid measurements
 
@@ -271,36 +281,53 @@ class PreprocessedData():
 
         self.compute_data()
 
-    def compute_pose_correspondences(self, raw_measurements):
+    def filter_mode(self):
+        """
+        Executes Measurement class filters again, after measurements have been fused
+        """
+        for m in self.measurements:
+            m.filter_rssi()
+        return True
+
+    def compute_pose_correspondences(self):
         if not self.poses:
-            rospy.logwarn('No poses input, compute pose correspondences stopped!')
+            print('No poses input, compute pose correspondences stopped!')
+            return False
+
+        if not self.measurements:
+            print('No measurement input, compute pose correspondences stopped!')
             return False
 
         poses_time = [long(p.header.stamp.secs*1e9+p.header.stamp.nsecs) for p in self.poses]
-        for i, m in enumerate(raw_measurements): # not optimized still O(n^2)
-            index_after  = poses_time.index(next(x for x in poses_time if x > m.start_time_ns))
-            index_before = index_after-1
+        for m in self.measurements: # not optimized still O(n^2)
+            index_after = None
+            for i, t in enumerate(poses_time):
+                if t > m.time:
+                    index_after, index_before = i, i - 1
+                    break
+
+            # skip this measurement as there are no corresponding pose time
+            if index_after == None:
+                continue
 
             if self.poses_type == 'PoseWithCovarianceStamped':
-                xa = poses[index_after].pose.pose.position.x
-                ya = poses[index_after].pose.pose.position.y
-                xb = poses[index_before].pose.pose.position.x
-                yb = poses[index_before].pose.pose.position.y
+                xa = self.poses[index_after].pose.pose.position.x
+                ya = self.poses[index_after].pose.pose.position.y
+                xb = self.poses[index_before].pose.pose.position.x
+                yb = self.poses[index_before].pose.pose.position.y
 
             elif self.poses_type == 'Path':
-                xa = poses[index_after].pose.position.x
-                ya = poses[index_after].pose.position.y
-                xb = poses[index_before].pose.position.x
-                yb = poses[index_before].pose.position.y
+                xa = self.poses[index_after].pose.position.x
+                ya = self.poses[index_after].pose.position.y
+                xb = self.poses[index_before].pose.position.x
+                yb = self.poses[index_before].pose.position.y
 
             #interpolation
             dt = float(poses_time[index_after] - poses_time[index_before])
-            dta = float((poses_time[index_after] - m.start_time_ns)/dt)
-            dtb = float((m.start_time_ns - poses_time[index_before])/dt)
-            self.measurements[i].pose = [dta*xb+dtb*xa, dta*yb+dtb*ya]
+            dta = float((poses_time[index_after] - m.time)/dt)
+            dtb = float((m.time - poses_time[index_before])/dt)
+            m.pose = [dta*xb+dtb*xa, dta*yb+dtb*ya]
         return True
-
-
 
     def filter_distance(self,**kwargs):
         """
@@ -359,14 +386,13 @@ class PreprocessedData():
         min_points_per_AP = kwargs.get('min_points_per_AP',self.filter_min_points_per_AP)
         self.compute_data()
 
-        del_list = list() #list with macs to delete
+        filtered_macs = []
 
         for mac,index in self.all_mac_dict.iteritems():
             count = np.count_nonzero(self.data['Y'][:,index])
-            if count < min_points_per_AP:
-                del_list.append(mac)
+            if count >= min_points_per_AP:
+                filtered_macs.append(mac)
 
-        filtered_macs = [mac for mac in self.all_mac_dict.keys() if not mac in del_list]
         self.all_mac_dict = {mac:i for i,mac in enumerate(filtered_macs)}
 
         return True
@@ -387,7 +413,7 @@ class PreprocessedData():
         else:
             dataX = None
 
-        dataY   = np.asarray([m.transform2vector(self.all_mac_dict,'mean') for m in self.measurements]) / 100.0 #scaled Y
+        dataY   = np.asarray([m.transform2vector(self.all_mac_dict,'mean') for m in self.measurements]) / 100.0 + (1. if self.flag_negative_db else 0) #scaled Y depends on type
         dataVar = np.asarray([m.transform2vector(self.all_mac_dict,'var') for m in self.measurements]) / 100.0 ** 2. #scaled Var
         dataN   = np.asarray([m.transform2vector(self.all_mac_dict,'len') for m in self.measurements])
 
