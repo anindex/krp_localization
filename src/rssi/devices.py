@@ -31,7 +31,7 @@ class WifiDevice:
                 strength = int(sig[-1])
                 signals[mac] = strength
         elif self.mode == "iw":
-            mac_cmd = 'sudo iw ' + self.device_name + ' scan | awk \'/^BSS/{mac = gensub ( /^BSS[[:space:]]*([0-9a-fA-F:]+).*?$/, \"\\1\", \"g\", $0 );}/^[[:space:]]*signal:/{signal = gensub ( /^[[:space:]]*signal:[[:space:]]*(\-?[0-9.]+).*?$/, \"\\1\", \"g\", $0 );printf (\"%s %s\n\", mac, signal);}\''
+            mac_cmd = 'iw ' + self.device_name + ' scan | awk \'/^BSS/{mac = gensub ( /^BSS[[:space:]]*([0-9a-fA-F:]+).*?$/, \"\\1\", \"g\", $0 );}/^[[:space:]]*signal:/{signal = gensub ( /^[[:space:]]*signal:[[:space:]]*(\-?[0-9.]+).*?$/, \"\\1\", \"g\", $0 );printf (\"%s %s\n\", mac, signal);}\''
             process = subprocess.Popen(mac_cmd.split(),stdout=subprocess.PIPE)
             process.wait()
 
