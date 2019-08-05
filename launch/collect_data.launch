@@ -1,8 +1,12 @@
 <launch>
-    <arg name="visualization"    default="true" />
+    <arg name="visualization"    default="false" />
+    <arg name="bag_path"    default="$(find krp_localization)/bags" />
+    <arg name="bag_name"    default="wholemap" />
 
     <node name="recorder" pkg="rosbag" type="record" args="-q amcl_pose scan rssi odom cmd_vel -O $(arg bag_path)/$(arg bag_name).bag" />
-    <node name="save_data" pkg="krp_localization" type="record_data"/>
+    <node name="save_data" pkg="krp_localization" type="record_data">
+      <param name="file_name_prefix" value="wholemap"/>
+    </node>
 
     <!-- Viewers -->
     <group if="$(arg visualization)">
