@@ -3,7 +3,6 @@ import numpy as np
 import sys
 import os
 import subprocess
-import argparse
 
 
 class WifiDevice:
@@ -33,11 +32,7 @@ class WifiDevice:
         return signals
 
 if __name__=="__main__":
-    parser = argparse.ArgumentParser(description='Wifi Signal Strength monitoring')
-    parser.add_argument('-s',dest='probe_size',default=5,help='Probe Size for each meassurement')
-
-    args = parser.parse_args()
-    device = WifiDevice(**vars(args))
+    device = WifiDevice()
 
     print('Streaming starting')
     print(device.probe_signal())
