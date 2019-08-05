@@ -6,25 +6,26 @@ import rospy
 from std_msgs.msg import String
 from rssi.devices import WifiDevice
 import thread
-from krp_localization.msg import RSSI, RSSIData
+from krp_localization.msg import RSSI, RSSIData, RssData, RssDatum
+import time
 
 class RSSINode():
-    def __init__(self, probe_size=3):
+    def __init__(self):
+        self.device_name      = rospy.get_param('~device_name', "wlx74da38d00733")
+        self.flag_negative_db = rospy.get_param('~flag_negative_db', True)
+        self.mode             = rospy.get_param('~mode', "iwlist")
+        self.probe_size       = rospy.get_param('~probe_size', 1)
+        self.freq             = rospy.get_param('~freq', 0.2)
 
-        self.pub = rospy.Publisher('rssi',RSSIData,queue_size=10)
-
-        self.probe_size = rospy.get_param('~probe_size', probe_size)
-        self.freq = rospy.get_param('~freq', 1)
+        self.pub = rospy.Publisher('rssi', RssData if self.flag_negative_db else RSSIData, queue_size=10)
 
         #RSSI device init
-        self.device = WifiDevice()
+        self.device = WifiDevice(device_name=self.device_name, mode=self.mode)
         r = rospy.Rate(self.freq)
 
         rospy.loginfo("RSSI Node started, publishing RSSI at rate {} Hz".format(self.freq))
 
         while not rospy.is_shutdown():
-            mess = RSSIData()
-            mess.start_time_ns = rospy.get_rostime().nsecs
             macs = {}
 
             for _ in range(self.probe_size):
@@ -34,15 +35,31 @@ class RSSINode():
                         macs[key] = []
                     macs[key].append(val)
 
+            if self.flag_negative_db:
+                mess = RssData()
+                mess.time_start_ns = rospy.get_rostime().nsecs
+                mess.duration_ms   = 1. / self.freq * 1000.
 
-            mess.macs = list(macs.keys())
-            mess.rssi = []
-            for mac in mess.macs:
-                s = RSSI()
-                s.rssi = macs[mac]
-                mess.rssi.append(s)
+                mess.mac_address = list(macs.keys())
+                mess.data = []
+                for mac in mess.mac_address:
+                    s = RssDatum()
+                    s.rss = macs[mac]
+                    mess.data.append(s)
+
+            else:
+                mess = RSSIData()
+                mess.start_time_ns = rospy.get_rostime().nsecs
+
+                mess.macs = list(macs.keys())
+                mess.rssi = []
+                for mac in mess.macs:
+                    s = RSSI()
+                    s.rssi = macs[mac]
+                    mess.rssi.append(s)
 
             self.pub.publish(mess)
+
             r.sleep()
 
 if __name__ == '__main__':
