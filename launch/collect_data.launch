@@ -3,7 +3,12 @@
     <arg name="bag_path"    default="$(find krp_localization)/bags" />
     <arg name="bag_name"    default="wholemap" />
 
-    <node name="recorder" pkg="rosbag" type="record" args="-q amcl_pose scan rssi odom cmd_vel -O $(arg bag_path)/$(arg bag_name).bag" />
+    <node name="rssi_node" pkg="krp_localization" type="rssi_node">
+      <param name="probe_size" value="3"/>
+      <param name="freq" value="0.5"/>
+    </node>
+
+    <node name="recorder" pkg="rosbag" type="record" args="-q amcl_pose base_scan rssi odom cmd_vel_keyboard -O $(arg bag_path)/$(arg bag_name).bag" />
     <node name="save_data" pkg="krp_localization" type="record_data">
       <param name="file_name_prefix" value="wholemap"/>
     </node>
