@@ -13,6 +13,7 @@ class WifiDevice:
     def __init__(self, **kwargs):
         self.probe_completed = True
         self.mode = kwargs.get("mode", "iw")
+        self.device_name = kwargs.get("device_name", "wlx74da38d00733")
 
     def probe_signal(self):
         self.probe_completed = False
@@ -30,7 +31,7 @@ class WifiDevice:
                 strength = int(sig[-1])
                 signals[mac] = strength
         elif self.mode == "iw":
-            mac_cmd = 'sudo iw wlx74da38d00733 scan | awk '/^BSS/{mac = gensub ( /^BSS[[:space:]]*([0-9a-fA-F:]+).*?$/, "\\1", "g", $0 );}/^[[:space:]]*signal:/{signal = gensub ( /^[[:space:]]*signal:[[:space:]]*(\-?[0-9.]+).*?$/, "\\1", "g", $0 );printf ("%s %s\n", mac, signal);}' | sort'
+            mac_cmd = 'sudo iw ' + self.device_name + ' scan | awk \'/^BSS/{mac = gensub ( /^BSS[[:space:]]*([0-9a-fA-F:]+).*?$/, \"\\1\", \"g\", $0 );}/^[[:space:]]*signal:/{signal = gensub ( /^[[:space:]]*signal:[[:space:]]*(\-?[0-9.]+).*?$/, \"\\1\", \"g\", $0 );printf (\"%s %s\n\", mac, signal);}\''
             process = subprocess.Popen(mac_cmd.split(),stdout=subprocess.PIPE)
             process.wait()
 
