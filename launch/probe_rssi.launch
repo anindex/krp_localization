@@ -1,0 +1,10 @@
+<launch>
+  
+    <node name="rssi_node" pkg="krp_localization" type="rssi_node">
+      <param name="probe_size" value="1"/>
+      <param name="device_name" value="wlx74da38d00733"/>
+      <param name="mode" value="iwlist"/>
+      <param name="freq" value="0.5"/>
+    </node>
+
+</launch>
