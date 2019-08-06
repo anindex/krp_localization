@@ -41,7 +41,7 @@ class WifiDevice:
             sig = process.communicate()[0].split()
 
             for i in range(0, len(sig) - 1, 2):
-                mac, strength = sig[i], int(sig[i + 1])
+                mac, strength = sig[i], int(float(sig[i + 1]))
                 signals[mac] = strength
 
         elif self.mode == "iwlist":
