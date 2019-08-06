@@ -2,12 +2,11 @@ import numpy as np
 import scipy
 import scipy.stats as stats
 import copy
-import levmar
 
 from utils.data_processing import validate_data
 from utils.maths import euclidean_squared
 
-class FLog(object):
+class PathLoss(object):
     """
     Base class for path loss functions. Each inherited class needs to implement
     (1) mean_val,
@@ -28,10 +27,15 @@ class FLog(object):
     def __init__(self,data,**kwargs):
         self.data    = validate_data(data)
         self.debug   = kwargs.get('debug',0)
-        self.name    = 'Log Function with levmar optimization'
-        #self.params  = kwargs.get('params_0',None)
+        self.params  = kwargs.get('params_0',None)
 
-        self.params = np.ones((self.data['Y'].shape[1],4))
+        if self.params is None:
+            self.params = self.params_init()
+        else:
+            if self.params.ndim == 1:   #casting into [1,np]
+                self.params = np.reshape(self.params,(1,self.params.shape[0]))
+            #Verify params_0 has adequate format
+            assert params.shape[0] == data['Y'].shape[1]
 
     def nll(self,dataTest=None):
         """
@@ -74,23 +78,96 @@ class FLog(object):
 
         return nll_f/nll_z
 
+
+    @staticmethod
+    def nll_optimize(params,*args):
+        """
+        params:
+            parameters used for the mean val function
+        args:
+            0:  Access Point
+            1:  mean val function
+            2:  self.data
+        """
+        AP = args[0]
+        mean_val = args[1]
+        X   = args[2]['X']
+        Y   = args[2]['Y'][:,AP:AP+1]
+        Var = args[2]['Var'][:,AP:AP+1]
+
+        Ys  = mean_val(X,params=params)
+        log_prob = stats.norm.logpdf(Ys,loc=Y,scale=Var**0.5)
+        return -np.sum(log_prob)
+
+
     def optimize(self, AP='all', ntimes = 1, verbose=False):
         """
         Main optimization function
-        Call for levmar optimization
-        TODO: add openMP to levmar
+        Currently optimizes each AP independently, optimization is performed
+        ntimes by optimizing nll using fmin_l_bfgs_b.
+
+        AP(Optional):
+            Is the access point to be optimized, if 'all' (default) all access
+            points are optimized
+        ntimes(Optional):
+            number of optimizations performed, each with a random initial point
+            given by params_init() - default 5
+        verbose(Optional):
+            If True outputs verbose information - default False
         """
-        # Optimization through levmar
+        if AP == 'all':
+            AP = range(self.data['Y'].shape[1])
+
+        #Generating initial parameters
+        #p0 = list()
+        #p0.append(self.params)      #first parameters are current parameters
+        #for i in range(1,ntimes):
+        #    p0.append(self.params_init())   #generates new set of initial params
+
+        p0 = list()
+        pinit = self.params_init()  #first parameters are current parameters
+        p0.append(pinit)
+        for theta in np.linspace(0,2*np.pi,ntimes-1,endpoint=False):
+            pi = pinit
+            pi[:,0] += np.cos(theta)
+            pi[:,1] += np.sin(theta)
+            p0.append(pi)   #generates new set of initial params
+
+
+        #Initiating optimization
         if verbose:
             print 'Initializing optimization'
 
-        nap = self.data['Y'].shape[1]
-        x_list = self.data['X'][:,0].tolist()
-        y_list = self.data['X'][:,1].tolist()
-        z_list = self.data['Y'].T.flatten().tolist()
-        p_estimate = levmar.optimize(x_list,y_list,z_list)
-        self.params = np.reshape(np.asarray(p_estimate),self.params.shape)
+        nll_values = np.inf*np.ones(self.data['Y'].shape[1])  #eval vector
 
+        for ntime in range(ntimes):
+            if verbose:
+                print 'Optimization ', ntime
+            #For each access points
+            for ap in AP:
+                if verbose:
+                    print 'Access Point: ', ap
+                    #print self.params[ap:ap+1]
+
+                args = (ap,self.mean_val,self.data)
+                params0 = p0[ntime][ap:ap+1,:] #initial parameter from p0
+                x,f,d = scipy.optimize.fmin_l_bfgs_b(self.nll_optimize, params0,
+                                               args=args,approx_grad=True) #optimization alg
+                #x,f,fc,gc,w = scipy.optimize.fmin_cg(self.nll_optimize, params0,
+                #                                 args=args,full_output=True)#,
+
+
+                #if verbose:
+                    #print params0
+                    #print 'd: ', d
+
+                if f < nll_values[ap]:   #if the optimization value is lower
+                    if verbose:
+                        print '########## Param vector updated ##########'
+                        print x
+                        print nll_values[ap], ' to ', f
+                    nll_values[ap] = f              # update eval vector
+                    self.params[ap,:] = x           # update params
 
     def new_data(self):
         """
@@ -151,7 +228,41 @@ class FLog(object):
 
 
     ####################          To implement by derived classes          ####################
-    def mean_val(self,X,params=None,bounded=True):
+    def mean_val(self,X,params=None,bounded=1):# params=None,i=0):
+        """
+        Compute the estimated value of the function at points X
+
+        X:
+            Points where the pathloss function is calculated
+        bounded:
+            if True, outputs the pathloss function bounded bellow by zero
+            if False, outputs an unbounded value
+        params(Optional):
+            For calculating mean_val. If None, use self.params.
+            Optional params important for optimization - see nll_optimize
+        """
+        raise NotImplementedError
+
+    def params_init(self):
+        """
+        Set params to suitable values at initialization if no init params (params_0) are given
+        Outputs fixed, educated random or random initial parameters for optimization
+        """
+        raise NotImplementedError
+
+
+class FLog(PathLoss):
+    """
+    Path loss function with power loss in dB logarithmic in distance
+    """
+    def __init__(self,data,**kwargs):
+        super(FLog,self).__init__(data,**kwargs)
+        self.name = 'Log Function'
+        if self.debug:
+            print 'class FLog init works'
+
+
+    def mean_val(self,X,params=None,bounded=True):# params=None,i=0):
         """
         Compute the estimated value of the function at points X - see .classes.PathLossFun
 
@@ -162,14 +273,42 @@ class FLog(object):
         if params is None:
             params = self.params
 
-        XAP = params[:,2:4]
-        k  = params[:,1]
-        P0 = params[:,0]
+        if params.ndim == 1:
+            params = np.reshape(params,(1,params.shape[0]))
 
-        r2 = euclidean_squared(X,XAP)
-        out = P0 - k*np.log(r2)
+
+        XAP = params[:,0:2]
+        k  = 0.8 #0.5 + 0.25*np.cos(params[:,2])
+        P0 = 0.9 + .1*np.cos(params[:,3])
+
+        r = euclidean_squared(X,XAP)**0.5
+        out = P0 - k*np.log10(r)
 
         if bounded:
             return np.clip(out,0.,P0)
         else:
             return np.clip(out,-np.inf,P0)
+
+
+    def params_init(self):
+        """
+        Generate suitable initial random parameters - see .classes.PathLossFun
+            Considers ap source X position as the one with the highest Y value, sd is set
+            to .1*max_X
+            k and P0 related parameters are the angle for a cos function, so the optimization
+            is bounded to +- cos amplitude, initialization is set to 0 with sd of 1
+
+            returns a numpy array [p,4]
+
+        <math>
+            ap = argmax_X(Y) +- .1*max(X)
+            k  = 1.5 + cos(0 +- 1)
+            P0 = 0.9 + .1*cos(0 +- 1)
+        """
+        max_arg_y = np.argmax(self.data['Y'],axis=0)
+        ap0 = self.data['X'][max_arg_y]
+        ap0_sd = 0.1*np.max(np.abs(self.data['X']))
+        temp_ones = np.ones_like(ap0[:,0])
+        return np.random.normal(
+               loc  = (ap0[:,0],ap0[:,1],0*temp_ones,0*temp_ones),
+               scale= (ap0_sd*temp_ones,ap0_sd*temp_ones,temp_ones,temp_ones)).T

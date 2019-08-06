@@ -241,17 +241,20 @@ class PreprocessedData():
         self.poses_type = kwargs.get('poses_type','PoseWithCovarianceStamped')
         ref_mac_dict    = kwargs.get('ref_mac_dict', None)
 
+        self.flag_no_poses_warn = kwargs.get('flag_no_poses_warn', True)
+
         self.flag_negative_db = kwargs.get('flag_negative_db', False)
 
         flag_min_distance       = kwargs.get('flag_min_distance', False)
         flag_fuse_measurements  = kwargs.get('flag_fuse_measurements', True)
         flag_min_points_per_AP  = kwargs.get('flag_fuse_min_points_per_AP', False)
-        flag_mode_filter        = kwargs.get('flag_mode_filter', True)
+        flag_mode_filter        = kwargs.get('flag_mode_filter', False)
+        self.flag_discard_non_pose   = kwargs.get('flag_discard_non_pose', True)
 
         self.measurements = [Measurement(m, flag_mode_filter=flag_mode_filter, flag_negative_db=self.flag_negative_db) for m in raw_measurements]
         self.compute_pose_correspondences()
 
-        if not self.poses:
+        if not self.poses and self.flag_no_poses_warn:
             print('No poses will associate to RSSI Measurements')
 
         if flag_min_distance:
@@ -291,7 +294,8 @@ class PreprocessedData():
 
     def compute_pose_correspondences(self):
         if not self.poses:
-            print('No poses input, compute pose correspondences stopped!')
+            if self.flag_no_poses_warn:
+                print('No poses input, compute pose correspondences stopped!')
             return False
 
         if not self.measurements:
@@ -408,13 +412,13 @@ class PreprocessedData():
                 N: [pxm] Number of rss measurements
                 *All outputs are 2d arrays with [] the dimension p:#positions, m:#access points
         """
-        if not self.poses is None:
-            dataX   = np.asarray([m.pose for m in self.measurements])
+        if self.poses:
+            dataX   = np.asarray([m.pose for m in self.measurements if m.pose or not self.flag_discard_non_pose])
         else:
             dataX = None
 
-        dataY   = np.asarray([m.transform2vector(self.all_mac_dict,'mean') for m in self.measurements]) / 100.0 + (1. if self.flag_negative_db else 0) #scaled Y depends on type
-        dataVar = np.asarray([m.transform2vector(self.all_mac_dict,'var') for m in self.measurements]) / 100.0 ** 2. #scaled Var
-        dataN   = np.asarray([m.transform2vector(self.all_mac_dict,'len') for m in self.measurements])
+        dataY   = np.asarray([m.transform2vector(self.all_mac_dict,'mean') for m in self.measurements if not self.poses or m.pose or not self.flag_discard_non_pose]) / 100.0 + (1. if self.flag_negative_db else 0) #scaled Y depends on type
+        dataVar = np.asarray([m.transform2vector(self.all_mac_dict,'var') for m in self.measurements if not self.poses or m.pose or not self.flag_discard_non_pose]) / 100.0 ** 2. #scaled Var
+        dataN   = np.asarray([m.transform2vector(self.all_mac_dict,'len') for m in self.measurements if not self.poses or m.pose or not self.flag_discard_non_pose])
 
         self.data = {'X':dataX,'Y':dataY,'Var':dataVar,'n':dataN}

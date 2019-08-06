@@ -1,10 +1,14 @@
 <launch>
     <arg name="visualization"    default="true" />
-
+    <param name="use_sim_time"   value="true" />
 
     <!-- wifi parameters -->
     <arg name="map_path"         default="$(find krp_localization)/maps/"/>
     <arg name="map_name"         default="test"/>
+
+    <arg name="bag_path"         default="$(find krp_localization)/bags/"/>
+    <arg name="bag_name"         default="b3test1"/>
+    <arg name="rosbag_rate"      default="1" />
 
     <!-- <arg name="map_xmin"         default="-25" />
     <arg name="map_xmax"         default="55"  />
@@ -14,6 +18,10 @@
 
     <!-- Processing nodes -->
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)$(arg map_name).yaml" />
+
+    <node name="player" pkg="rosbag" type="play" args="--clock --rate=$(arg rosbag_rate) $(arg bag_path)$(arg bag_name).bag">
+        <param name="bag_name" value="$(arg bag_name)"/>
+    </node>
 
     <node name="rssi_localization_server" pkg="krp_localization" type="rssi_localization_server">
         <param name="train_data_prefix"        value="test" />
