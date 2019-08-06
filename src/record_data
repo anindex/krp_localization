@@ -16,6 +16,8 @@ from geometry_msgs.msg import PoseArray, PoseWithCovarianceStamped
 from krp_localization.msg import RSSIData
 from utils.load import save
 
+from nav_msgs.msg import Odometry
+
 
 class RecordData():
     def __init__(self):
@@ -37,11 +39,16 @@ class RecordData():
         #subscribers
         rospy.Subscriber('/rssi', RSSIData, self.callback_rssi)
         rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.callback_amcl_pose)
-        rospy.Subscriber('/odom', PoseWithCovarianceStamped, self.callback_odom)
+        rospy.Subscriber('/odom', Odometry, self.callback_odom)
 
         shutdown = False
         while (not rospy.is_shutdown()) and (not shutdown):
             time.sleep(5) #check every 5s
+
+            rospy.loginfo("RSSI size: {}".format(len(self.rssi)))
+            rospy.loginfo("AMCL pose size: {}".format(len(self.amcl_pose)))
+            rospy.loginfo("Odom size: {}".format(len(self.odom)))
+
             topics = rospy.get_published_topics()
             #outputs 1 if rss is being published, 0 otherwise
             active = sum([1 if 'rssi' in t[0] else 0 for t in topics])
