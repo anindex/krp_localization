@@ -34,12 +34,12 @@ class RecordData():
         #lists
         self.rssi = list()
         self.amcl_pose = list()
-        self.odom = list()
+        #self.odom = list()
 
         #subscribers
         rospy.Subscriber('/rssi', RSSIData, self.callback_rssi)
         rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.callback_amcl_pose)
-        rospy.Subscriber('/odom', Odometry, self.callback_odom)
+        #rospy.Subscriber('/odom', Odometry, self.callback_odom)
 
         shutdown = False
         while (not rospy.is_shutdown()) and (not shutdown):
@@ -47,7 +47,7 @@ class RecordData():
 
             rospy.loginfo("RSSI size: {}".format(len(self.rssi)))
             rospy.loginfo("AMCL pose size: {}".format(len(self.amcl_pose)))
-            rospy.loginfo("Odom size: {}".format(len(self.odom)))
+            #rospy.loginfo("Odom size: {}".format(len(self.odom)))
 
             topics = rospy.get_published_topics()
             #outputs 1 if rss is being published, 0 otherwise
@@ -79,7 +79,7 @@ class RecordData():
 
             save(self.rssi, filepath + self.file_name_prefix + "rssi.p")
             save(self.amcl_pose, filepath + self.file_name_prefix + "amcl_pose.p")
-            save(self.odom, filepath + self.file_name_prefix + "odom.p")
+            #save(self.odom, filepath + self.file_name_prefix + "odom.p")
 
             return True
         except:
