@@ -20,7 +20,7 @@ def load_data(**kwargs):
         file_path ['~/catkin_ws/src/tests/bags/processed_data/']: Path where to find files
     """
     rospack = rospkg.RosPack()
-    file_name = kwargs.get('file_name','floor2')
+    file_name = kwargs.get('file_name','test')
     file_path = kwargs.get('file_path',None)
     if file_path is None:
         file_path=rospack.get_path('krp_localization') + '/data/'
@@ -29,13 +29,13 @@ def load_data(**kwargs):
 
     file1 = f+'rssi.p'
     file2 = f+'poses.p'
-    file3 = f+'odom.p'
+    #file3 = f+'odom.p'
 
     with open(file1, 'rb') as f:
       rssi = pickle.load(f)
     with open(file2, 'rb') as f:
       poses = pickle.load(f)
-    with open(file3, 'rb') as f:
-      odom = pickle.load(f)
+    #with open(file3, 'rb') as f:
+      #odom = pickle.load(f)
 
-    return (rssi,poses,odom)
+    return (rssi,poses)#(rssi,poses,odom)

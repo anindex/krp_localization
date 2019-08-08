@@ -4,7 +4,7 @@ from data_preprocessing import PreprocessedData, Measurement
 from utils.structures import mesh, pose_from_array
 from utils.load import load_data
 from localization.models import hGP
-from krp_localization.msg import RSSIData, RssData
+from krp_localization.msg import RSSIData
 
 import rospkg
 

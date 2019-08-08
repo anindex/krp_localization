@@ -26,7 +26,7 @@ class RecordData():
 
         #ROS PARAMSERVER
         self.ns = rospy.get_namespace()
-        self.file_name_prefix = rospy.get_param('~file_name_prefix', "floor2")
+        self.file_name_prefix = rospy.get_param('~file_name_prefix', "test")
         self.file_path = rospack.get_path('krp_localization') + '/data/'
 
         rospy.loginfo('Save data in folder: {}'.format(self.file_path))

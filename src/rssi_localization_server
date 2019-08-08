@@ -12,7 +12,7 @@ import rospkg
 #ros messages
 from std_msgs.msg import Float64MultiArray
 from geometry_msgs.msg import PoseWithCovarianceStamped, Pose, PoseArray
-from krp_localization.msg import RSSIData, RssData
+from krp_localization.msg import RSSIData
 
 #Services
 from krp_localization.srv import RSSILocalization
@@ -51,7 +51,7 @@ class RSSILocalizationServer():
 
         if flag_self_localization:
             self.raw_rssi    = list()
-            rospy.Subscriber(self.ns + ('rss' if self.flag_negative_db else 'rssi'), RSSIData if not self.flag_negative_db else RssData, self.callback_rssi)
+            rospy.Subscriber(self.ns + 'rssi', RSSIData, self.callback_rssi)
 
             self.pub_pose = rospy.Publisher('rssi_loc_server_poses', PoseArray, queue_size=1)
             self.pub_pose_prob = rospy.Publisher('rssi_loc_server_poses_prob', Float64MultiArray, queue_size=1)
@@ -138,7 +138,7 @@ class RSSILocalizationServer():
         Handle for the location server service
 
         Inputs
-            raw_rssi        [RssData] Received RSSI message (rss.msg RssData)
+            raw_rssi        [RSSIData] Received RSSI message (rss.msg RSSIData)
             nsamples        [Int] with the number of desired samples,
                             if nsamples==1 the most likely sample is returned
             pose_array      [PoseArray] if empty, the loc_server samples the model and
@@ -151,7 +151,7 @@ class RSSILocalizationServer():
         Returns
             pose_array      Original pose_array if provided, or pose_array made of samples drawn
                             from model
-            weights         Weights (likelihood) of pose_array for the model given the RssData
+            weights         Weights (likelihood) of pose_array for the model given the RSSIData
                             provided
         """
         x_min = int(self.model.xmin)

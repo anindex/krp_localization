@@ -6,7 +6,7 @@ import pickle
 import copy
 
 #Data types
-from krp_localization.msg import RSSIData, RssData
+from krp_localization.msg import RSSIData
 
 
 
@@ -35,25 +35,18 @@ class Measurement():
         self.flag_mode_filter = kwargs.get('flag_mode_filter', True)
         self.filter_factor    = kwargs.get('filter_rssi_factor', 0.3) #30% lower than mode count
 
-        self.flag_negative_db = kwargs.get('flag_negative_db', False)
+        self.flag_negative_db = kwargs.get('flag_negative_db', True)
 
         #measurement param
         self.min_rssi  = kwargs.get('min_rssi', 0 if not self.flag_negative_db else -100)
         self.prior_var = kwargs.get('prior_var', 5)
 
         #retrieve mdata
-        if not self.flag_negative_db:
-            assert type(mdata) is RSSIData
-            self.time = long(mdata.start_time_ns)
-            self.nap = len(mdata.macs)
-            self.mac_dict = {mdata.macs[i]:i for i in np.arange(self.nap)}
-            self.rssi  = [s.rssi for s in mdata.rssi]
-        else:
-            #assert type(mdata) is RssData
-            self.time = long(mdata.time_start_ns+long(mdata.duration_ms*1000))
-            self.nap = len(mdata.mac_address)
-            self.mac_dict = {mdata.mac_address[i]:i for i in np.arange(self.nap)}
-            self.rssi  = [list(data.rss) for data in mdata.data]
+        assert type(mdata) is RSSIData
+        self.time = long(mdata.start_time_ns)
+        self.nap = len(mdata.macs)
+        self.mac_dict = {mdata.macs[i]:i for i in np.arange(self.nap)}
+        self.rssi  = [s.rssi for s in mdata.rssi]
 
         #Filter
         self.filtered_rssi = list()
@@ -243,7 +236,7 @@ class PreprocessedData():
 
         self.flag_no_poses_warn = kwargs.get('flag_no_poses_warn', True)
 
-        self.flag_negative_db = kwargs.get('flag_negative_db', False)
+        self.flag_negative_db = kwargs.get('flag_negative_db', True)
 
         flag_min_distance       = kwargs.get('flag_min_distance', False)
         flag_fuse_measurements  = kwargs.get('flag_fuse_measurements', True)
