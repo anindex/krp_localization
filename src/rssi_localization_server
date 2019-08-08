@@ -182,6 +182,19 @@ class RSSILocalizationServer():
         Xtest   = mesh(temp_x,temp_y)
         prob_mesh = self.model.jointpdf(Xtest,rssi_data.data['Y'])
 
+        if nsamples == 1:
+            pose_array = PoseArray()
+            pose_array.header.stamp = rospy.get_rostime()
+            pose_array.header.frame_id = frame
+            pose_array.poses = list()
+
+            index = np.argmax(prob_mesh)
+            pose_array.poses.append(pose_from_array(Xtest[index, :]))
+
+            weights = list()
+            weights.append(prob_mesh[index])
+
+            return [pose_array, weights, prob_mesh.flatten().tolist()]
 
         # if nsamples differs from pose_array size - e.g., empty pose_array nsamples are drawn from the current model's posterior given the rss message
         if not pose_array or nsamples != len(pose_array.poses):
@@ -209,10 +222,8 @@ class RSSILocalizationServer():
 
         # compute the weights as the likelihood of the samples
         weights = self.model.jointpdf(samples, rssi_data.data['Y'])
-        weights.tolist()
-        prob_mesh.flatten().tolist()
 
-        return [pose_array, weights, prob_mesh]
+        return [pose_array, weights.tolist(), prob_mesh.flatten().tolist()]
 
 if __name__ == '__main__':
     rssi_loc = RSSILocalizationServer()
