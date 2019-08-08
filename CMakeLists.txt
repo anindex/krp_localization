@@ -60,6 +60,7 @@ add_message_files(
 add_service_files(
    FILES
    RSSILocalization.srv
+   RSSIParticleInit.srv
 )
 
 ## Generate actions in the 'action' folder

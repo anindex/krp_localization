@@ -53,8 +53,8 @@ class RSSILocalizationServer():
             self.raw_rssi    = list()
             rospy.Subscriber(self.ns + 'rssi', RSSIData, self.callback_rssi)
 
-            self.pub_pose = rospy.Publisher('rssi_loc_server_poses', PoseArray, queue_size=1)
-            self.pub_pose_prob = rospy.Publisher('rssi_loc_server_poses_prob', Float64MultiArray, queue_size=1)
+            self.pub_poses = rospy.Publisher('rssi_loc_server_poses', PoseArray, queue_size=1)
+            self.pub_prob_mesh = rospy.Publisher('rssi_loc_server_prob_mesh', Float64MultiArray, queue_size=1)
 
         if trained_model_path:
             # Load model
@@ -107,11 +107,11 @@ class RSSILocalizationServer():
                 loc = self.sample_from_model(rssi_list, self.nsamples, None)
 
                 if len(loc[0].poses) > 0:
-                    self.pub_pose.publish(loc[0])
+                    self.pub_poses.publish(loc[0])
 
-                pose_prob = Float64MultiArray()
-                pose_prob.data = loc[2]
-                self.pub_pose_prob.publish(pose_prob)
+                prob_mesh = Float64MultiArray()
+                prob_mesh.data = loc[2]
+                self.pub_prob_mesh.publish(prob_mesh)
 
             r.sleep()
 
