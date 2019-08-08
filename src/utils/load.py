@@ -28,7 +28,7 @@ def load_data(**kwargs):
     f=file_path+file_name
 
     file1 = f+'rssi.p'
-    file2 = f+'poses.p'
+    file2 = f+'amcl_pose.p'
     #file3 = f+'odom.p'
 
     with open(file1, 'rb') as f:

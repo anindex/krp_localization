@@ -46,7 +46,7 @@ class Measurement():
         self.time = long(mdata.start_time_ns)
         self.nap = len(mdata.macs)
         self.mac_dict = {mdata.macs[i]:i for i in np.arange(self.nap)}
-        self.rssi  = [s.rssi for s in mdata.rssi]
+        self.rssi  = [list(s.rssi) for s in mdata.rssi]
 
         #Filter
         self.filtered_rssi = list()
@@ -172,7 +172,7 @@ class Measurement():
         result.rssi = result.rssi + [[]] * len(to_add_keys)
         for other_mac,other_index in other.mac_dict.iteritems():
             index = result.mac_dict[other_mac]
-            result.rssi[index] = result.rssi[index]+other.rssi[other_index]
+            result.rssi[index].extend(other.rssi[other_index])
 
         # if position is known
         if result.pose is None:
@@ -258,7 +258,7 @@ class PreprocessedData():
                 print('Min distance filter cannot perform on non-poses data')
 
         if flag_fuse_measurements:
-            self.filter_fuse_measurements = kwargs.get('filter_fuse_measurements', 3) #number of consecutive measurements to fuse
+            self.filter_fuse_measurements = kwargs.get('filter_fuse_measurements', 2) #number of consecutive measurements to fuse
             self.filter_fuse()
 
         if (flag_fuse_measurements or flag_min_distance and self.poses) and flag_mode_filter:

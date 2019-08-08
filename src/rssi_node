@@ -35,7 +35,8 @@ class RSSINode():
                     macs[key].append(val)
 
             mess = RSSIData()
-            mess.start_time_ns = rospy.get_rostime().nsecs
+            now = rospy.get_rostime()
+            mess.start_time_ns = now.secs * 1e9 + now.nsecs
 
             mess.macs = list(macs.keys())
             mess.rssi = []

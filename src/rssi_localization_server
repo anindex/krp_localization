@@ -47,7 +47,7 @@ class RSSILocalizationServer():
         flag_mode_filter = rospy.get_param('~flag_mode_filter', False)
         flag_discard_non_pose = rospy.get_param('~flag_discard_non_pose', True)
 
-        train_data_fuse = rospy.get_param('~train_data_fuse', 3)
+        train_data_fuse = rospy.get_param('~train_data_fuse', 2)
 
         if flag_self_localization:
             self.raw_rssi    = list()
@@ -64,8 +64,10 @@ class RSSILocalizationServer():
 
         else:
             rospy.loginfo('Loading train data path: {}'.format(train_data_path))
-            raw_rssi, poses, _ = load_data(file_name=train_data_prefix, file_path=train_data_path) #odometry is not needed
+            raw_rssi, poses = load_data(file_name=train_data_prefix, file_path=train_data_path) #odometry is not needed
 
+            rospy.loginfo('Number of RSSI dataset         : {}'.format(len(raw_rssi)))
+            rospy.loginfo('Number of AMCL poses           : {}'.format(len(poses)))
 
             traindata = PreprocessedData(raw_rssi, flag_negative_db         = self.flag_negative_db,
                                                    flag_min_distance        = flag_min_distance,
@@ -79,9 +81,9 @@ class RSSILocalizationServer():
             distance = np.sum(traindata.data['X'][1:]**2 + traindata.data['X'][:-1]**2 - 2*traindata.data['X'][1:]*traindata.data['X'][:-1],axis=1)**.5
             avg_distance = np.mean(distance)
 
-            rospy.loginfo('Number of measurements         : {}'.format(traindata.data["Y"].shape[0]))
-            rospy.loginfo('Number of macs considered (all): {}'.format(len(traindata.all_mac_dict)))
-            rospy.loginfo('Average distance between points: {}'.format(np.round(avg_distance,2)))
+            rospy.loginfo('Number of processed measurements: {}'.format(traindata.data["Y"].shape[0]))
+            rospy.loginfo('Number of macs considered (all) : {}'.format(len(traindata.all_mac_dict)))
+            rospy.loginfo('Average distance between points : {}'.format(np.round(avg_distance,2)))
 
             #Train model
             rospy.loginfo('Training model')
