@@ -1,3 +1,3 @@
-uint32      start_time_ns
+uint64      start_time_ns
 string[]    macs
 RSSI[]      rssi
