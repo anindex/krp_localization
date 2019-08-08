@@ -106,7 +106,7 @@ class RSSILocalizationServer():
                 rssi_list, self.raw_rssi = self.raw_rssi, []
                 loc = self.sample_from_model(rssi_list, self.nsamples, None)
 
-                if len(loc[0].poses) > 1:
+                if len(loc[0].poses) > 0:
                     self.pub_pose.publish(loc[0])
 
                 pose_prob = Float64MultiArray()

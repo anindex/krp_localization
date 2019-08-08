@@ -20,7 +20,7 @@
         <param name="train_data_fuse"          value="2" />
         <param name="flag_self_localization"   value="true" />
         <param name="flag_negative_db"         value="true" />
-        <param name="nsamples"                 value="500" />
+        <param name="nsamples"                 value="1" />
     </node>
 
     <group if="$(arg visualization)">
