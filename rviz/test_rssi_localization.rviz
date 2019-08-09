@@ -7,7 +7,6 @@ Panels:
         - /Global Options1
         - /PoseArray1
         - /RSSIProbMesh1
-        - /RSSIProbMesh1/Status1
       Splitter Ratio: 0.49444443
     Tree Height: 895
   - Class: rviz/Selection
@@ -83,7 +82,7 @@ Visualization Manager:
       Marker Topic: /rssi_prob_mesh
       Name: RSSIProbMesh
       Namespaces:
-        {}
+        "": true
       Queue Size: 100
       Value: true
   Enabled: true
@@ -111,7 +110,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 26.7245045
+      Distance: 17.6912727
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1

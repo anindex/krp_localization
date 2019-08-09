@@ -16,11 +16,11 @@
     <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)$(arg map_name).yaml" />
 
     <node name="rssi_localization_server" pkg="krp_localization" type="rssi_localization_server">
-        <param name="train_data_prefix"        value="test" />
+        <param name="train_data_prefix"        value="wholemap" />
         <param name="train_data_fuse"          value="2" />
         <param name="flag_self_localization"   value="true" />
         <param name="flag_negative_db"         value="true" />
-        <param name="nsamples"                 value="200" />
+        <param name="nsamples"                 value="100" />
         <param name="K"                        value="75" />
     </node>
 

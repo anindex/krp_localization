@@ -1,7 +1,9 @@
 <launch>
   <arg name="bag_path"         default="$(find krp_localization)/bags/"/>
-  <arg name="bag_name"         default="test"/>
+  <arg name="bag_name"         default="wholemap"/>
   <arg name="rosbag_rate"      default="1" />
+
+  <param name="use_sim_time" value="true" />
 
 
   <node name="player" pkg="rosbag" type="play" args=" --clock --rate=$(arg rosbag_rate) $(arg bag_path)$(arg bag_name).bag">
