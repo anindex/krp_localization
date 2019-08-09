@@ -119,6 +119,10 @@ class KRPWifi():
         best_pose.pose             = pose_from_array(get_best_pose(loc.pose_array, weights))
         self.pub_pose_best.publish(best_pose)
 
+        prob_mesh = Float64MultiArray()
+        prob_mesh.data = loc.prob_mesh
+        self.pub_prob_mesh.publish(prob_mesh)
+
         if np.std(weights) > self.rssi_weightstd_krp_thres: # and self.flag_rssi_resampling:
             rospy.loginfo('RSSI Weight exceeds std threshold! Calling RSSI resampling')
             rs_pose_array, rs_weights = resampling_wheel_pose_array(loc.pose_array, weights, nsamples=weights.shape[0])
