@@ -2,6 +2,24 @@ import numpy as np
 from utils.structures import mesh
 from scipy.stats import gaussian_kde
 
+
+def resampling_wheel_pose_array(pose_array,weights,nsamples=None):
+    if nsamples is None:
+        nsamples = len(pose_array.poses)
+    resampled_pose_array = PoseArray()
+    resampled_weights = list()
+    index = np.random.randint(weights.shape[0])
+    beta = 0.0
+    mw = np.max(weights)
+    for i in range(nsamples):
+        beta = beta + np.random.rand()*2*mw
+        while beta > weights[index]:
+            beta -= weights[index]
+            index = (index+1)%weights.shape[0]
+        resampled_pose_array.poses.append(pose_array.poses[index])
+        resampled_weights.append(weights[index])
+    return resampled_pose_array, np.asarray(resampled_weights)
+
 def resampling_wheel(particles,weights,Nsamples=None):
         '''
         Create new particles given particles' weights

@@ -1,6 +1,6 @@
 import numpy as np
 from geometry_msgs.msg import PoseArray, Pose
-
+import tf
 
 def mesh(x1,x2):
     """
@@ -20,3 +20,19 @@ def pose_from_array(array):
     pose.position.x = array.flatten()[0]
     pose.position.y = array.flatten()[1]
     return pose
+
+def pose_from_array_orientation(array):
+    pose = Pose()
+    pose.position.x = array[0]
+    pose.position.y = array[1]
+    quat = tf.transformations.quaternion_from_euler(0,0,array[2])
+    pose.orientation.z = quat[2]
+    pose.orientation.w = quat[3]
+    return pose
+
+def get_best_pose(pose_array, weights):
+    if not pose_array or len(pose_array) != len(weights):
+        return
+
+    index = np.argmax(weights)
+    return pose_array[index, :]
