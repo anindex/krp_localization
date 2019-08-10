@@ -37,6 +37,10 @@ class RSSILocalizationServer():
 
         self.K                 = rospy.get_param('~K', 100)
         self.nsamples          = rospy.get_param('~nsamples', 500)
+        self.mode              = rospy.get_param('~mode','max_gaussian_mean_sampling')
+
+        self.max_gaussian_mean_stdX              = rospy.get_param('~max_gaussian_mean_stdX', 0.5)
+        self.max_gaussian_mean_stdY              = rospy.get_param('~max_gaussian_mean_stdY', 0.5)
 
         train_data_prefix = rospy.get_param('~train_data_prefix', "test")
         train_data_path = rospy.get_param('~train_data_path', rospack.get_path('krp_localization') + "/data/")
@@ -168,7 +172,7 @@ class RSSILocalizationServer():
 
         if not isinstance(self.model,SensorModel):
             rospy.logwarn('Provided model is not a valid SensorModel')
-            return [pose_array, list(), list()]
+            return [pose_array, [], []]
 
         rssi_data  = PreprocessedData(raw_rssi, flag_negative_db=self.flag_negative_db,
                                                 flag_no_poses_warn=False,
@@ -184,48 +188,62 @@ class RSSILocalizationServer():
         Xtest   = mesh(temp_x,temp_y)
         prob_mesh = self.model.jointpdf(Xtest,rssi_data.data['Y'])
 
-        if nsamples == 1:
+        if self.mode == "max_gaussian_mean_sampling":
             pose_array = PoseArray()
             pose_array.header.stamp = rospy.get_rostime()
             pose_array.header.frame_id = frame
             pose_array.poses = list()
 
-            index = np.argmax(prob_mesh)
-            pose_array.poses.append(pose_from_array(Xtest[index, :]))
+            samples = []
+            best_pose = Xtest[np.argmax(prob_mesh), :]
+            samplingX = np.random.normal(0, self.max_gaussian_mean_stdX, nsamples - 1)
+            samplingY = np.random.normal(0, self.max_gaussian_mean_stdY, nsamples - 1)
 
-            weights = list()
-            weights.append(prob_mesh[index])
-
-            return [pose_array, weights, prob_mesh.flatten().tolist()]
-
-        # if nsamples differs from pose_array size - e.g., empty pose_array nsamples are drawn from the current model's posterior given the rss message
-        if not pose_array or nsamples != len(pose_array.poses):
-            pose_array = PoseArray()
-            pose_array.header.stamp = rospy.get_rostime()
-            pose_array.header.frame_id = frame
-            pose_array.poses = list()
-
-            try:
-                measurement = rssi_data.data['Y']
-                samples     = self.model.sample(measurement,span=(x_min,x_max,y_min,y_max),
-                                                            nsamples=nsamples,
-                                                            K=50,
-                                                            batch=1)
-                pose_array.poses = [pose_from_array(x) for x in samples]
-            except:
-                e = sys.exc_info()[0]
-                rospy.logerr('Sampling failed: '+str(e))
-                return None
-
-        # if nsamples equals the number of poses in pose_array use those poses and compute weights
-        else:
-            samples = [[p.position.x, p.position.y] for p in pose_array.poses]
+            samples.append(best_pose)
+            for i in range(nsamples - 1):
+                samples.append([best_pose[0] + samplingX[i], best_pose[1] + samplingY[i]])
             samples = np.asarray(samples)
 
-        # compute the weights as the likelihood of the samples
-        weights = self.model.jointpdf(samples, rssi_data.data['Y'])
+            weights = self.model.jointpdf(samples, rssi_data.data['Y'])
+            pose_array.poses = [pose_from_array(x) for x in samples]
+
+        elif self.mode == "prob_mesh_sampling":
+            # if nsamples differs from pose_array size - e.g., empty pose_array nsamples are drawn from the current model's posterior given the rss message
+            if not pose_array or nsamples != len(pose_array.poses):
+                pose_array = PoseArray()
+                pose_array.header.stamp = rospy.get_rostime()
+                pose_array.header.frame_id = frame
+                pose_array.poses = list()
+
+                if nsamples == 1:
+                    index = np.argmax(prob_mesh)
+                    pose_array.poses.append(pose_from_array(Xtest[index, :]))
+
+                    weights = list()
+                    weights.append(prob_mesh[index])
+                else:
+                    try:
+                        measurement = rssi_data.data['Y']
+                        samples     = self.model.sample(measurement,span=(x_min,x_max,y_min,y_max),
+                                                                    nsamples=nsamples,
+                                                                    K=50,
+                                                                    batch=1)
+                        pose_array.poses = [pose_from_array(x) for x in samples]
+                        weights = self.model.jointpdf(samples, rssi_data.data['Y'])
+                    except:
+                        e = sys.exc_info()[0]
+                        rospy.logerr('Sampling failed: '+str(e))
+                        return [pose_array, [], []]
+            # if nsamples equals the number of poses in pose_array use those poses and compute weights
+            else:
+                samples = [[p.position.x, p.position.y] for p in pose_array.poses]
+                samples = np.asarray(samples)
+                # compute the weights as the likelihood of the samples
+                weights = self.model.jointpdf(samples, rssi_data.data['Y'])
+        else:
+            rospy.logerr("Invalid mode input! Modes are max_gaussian_mean_sampling and prob_mesh_sampling")
+            return [pose_array, [], []]
 
         return [pose_array, weights.tolist(), prob_mesh.flatten().tolist()]
-
 if __name__ == '__main__':
     rssi_loc = RSSILocalizationServer()
