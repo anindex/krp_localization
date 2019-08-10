@@ -6,7 +6,7 @@
     <arg name="save"    default="true" />
 
     <group if="$(arg bag)">
-      <node name="recorder" pkg="rosbag" type="record" args="-q amcl_pose base_scan rssi odom cmd_vel_keyboard -O $(arg bag_path)/$(arg bag_name).bag" />
+      <node name="recorder" pkg="rosbag" type="record" args="-q tf tf_static amcl_pose base_scan rssi odom -O $(arg bag_path)/$(arg bag_name).bag" />
     </group>
 
     <group if="$(arg save)">

@@ -1,13 +1,68 @@
 <launch>
+  <arg name="visualization"    default="true" />
   <arg name="bag_path"         default="$(find krp_localization)/bags/"/>
   <arg name="bag_name"         default="wholemap"/>
-  <arg name="rosbag_rate"      default="1" />
 
   <param name="use_sim_time" value="true" />
 
-
-  <node name="player" pkg="rosbag" type="play" args=" --clock --rate=$(arg rosbag_rate) $(arg bag_path)$(arg bag_name).bag">
-      <param name="bag_name" value="$(arg bag_name)"/>
+  <node name="player" pkg="rosbag" type="play" args=" --clock $(arg bag_path)$(arg bag_name).bag">
+    <remap from="amcl_pose" to="ref_amcl_pose"/>
   </node>
 
+  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find youbot_description)/robots/youbot.urdf.xacro'"/>
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
+
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find krp_localization)/maps/test.yaml"/>
+
+  <!-- <node pkg="tf" type="static_transform_publisher" name="base_to_laser" args="0.30 0 -0.03 0 0 0 1 base_link laser_link 10" />
+  <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 1 map odom 10" /> -->
+
+  <node pkg="amcl" type="amcl" name="amcl">
+    <remap from="scan" to="base_scan"/>
+    <rosparam command="load" file="$(find krp_localization)/maps/initial/test_initialpose.yaml" />
+
+    <param name="base_frame_id" value="base_footprint"/>
+    <param name="odom_frame_id" value="odom"/>
+    <param name="global_frame_id" value="map"/>
+
+    <param name="odom_model_type" value="omni-corrected"/>
+    <param name="odom_alpha5" value="0.1"/>
+    <param name="transform_tolerance" value="0.2"/>
+    <param name="gui_publish_rate" value="1.0"/>
+    <param name="laser_max_beams" value="30"/>
+    <param name="min_particles" value="500"/>
+    <param name="max_particles" value="5000"/>
+    <param name="kld_err" value="0.02"/>
+    <param name="kld_z" value="0.99"/>
+    <param name="odom_alpha1" value="0.2"/>
+    <param name="odom_alpha2" value="0.2"/>
+    <param name="odom_alpha3" value="0.2"/>
+    <param name="odom_alpha4" value="0.2"/>
+    <param name="laser_z_hit" value="0.85"/>
+    <param name="laser_z_short" value="0.05"/>
+    <param name="laser_z_max" value="0.05"/>
+    <param name="laser_z_rand" value="0.05"/>
+    <param name="laser_sigma_hit" value="0.1"/>
+    <param name="laser_lambda_short" value="0.1"/>
+    <param name="laser_model_type" value="likelihood_field"/>
+    <param name="laser_likelihood_max_dist" value="2.0"/>
+    <param name="update_min_d" value="0.2"/>
+    <param name="update_min_a" value="0.5"/>
+    <param name="resample_interval" value="1"/>
+    <param name="transform_tolerance" value="0.1"/>
+    <param name="recovery_alpha_slow" value="0.001"/>
+    <param name="recovery_alpha_fast" value="0.1"/>
+  </node>
+
+  <node name="amcl_trajectory" pkg="hector_trajectory_server" type="hector_trajectory_server" output="screen">
+    <param name="target_frame_name" type="string" value="/map" />
+    <param name="source_frame_name" type="string" value="/base_footprint" />
+    <param name="trajectory_update_rate" type="double" value="10" />
+    <param name="trajectory_publish_rate" type="double" value="1" />
+  </node>
+
+  <group if="$(arg visualization)">
+      <node name="rviz" pkg="rviz" type="rviz"  args="-d $(find krp_localization)/rviz/playback.rviz"/>
+  </group>
 </launch>
