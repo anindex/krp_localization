@@ -108,7 +108,7 @@ class RSSILocalizationServer():
 
         r = rospy.Rate(1)  #1Hz
         while not rospy.is_shutdown():
-            if flag_self_localization and len(self.raw_rssi) > 2:
+            if flag_self_localization and len(self.raw_rssi) > 1:
                 rssi_list, self.raw_rssi = self.raw_rssi, []
                 loc = self.sample_from_model(rssi_list, self.nsamples, None)
 

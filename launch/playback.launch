@@ -1,22 +1,15 @@
 <launch>
+  <param name="use_sim_time" value="true" />
+  
   <arg name="visualization"    default="true" />
   <arg name="bag_path"         default="$(find krp_localization)/bags/"/>
-  <arg name="bag_name"         default="wholemap"/>
-
-  <param name="use_sim_time" value="true" />
+  <arg name="bag_name"         default="krp1"/>
 
   <node name="player" pkg="rosbag" type="play" args=" --clock $(arg bag_path)$(arg bag_name).bag">
     <remap from="amcl_pose" to="ref_amcl_pose"/>
   </node>
 
-  <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find youbot_description)/robots/youbot.urdf.xacro'"/>
-
-  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher" output="screen"/>
-
   <node name="map_server" pkg="map_server" type="map_server" args="$(find krp_localization)/maps/test.yaml"/>
-
-  <!-- <node pkg="tf" type="static_transform_publisher" name="base_to_laser" args="0.30 0 -0.03 0 0 0 1 base_link laser_link 10" />
-  <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 1 map odom 10" /> -->
 
   <node pkg="amcl" type="amcl" name="amcl">
     <remap from="scan" to="base_scan"/>

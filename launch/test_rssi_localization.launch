@@ -1,11 +1,4 @@
 <launch>
-    <arg name="visualization"    default="true" />
-    <param name="use_sim_time"   value="false" />
-
-    <!-- wifi parameters -->
-    <arg name="map_path"         default="$(find krp_localization)/maps/"/>
-    <arg name="map_name"         default="test"/>
-
     <!-- <arg name="map_xmin"         default="-25" />
     <arg name="map_xmax"         default="55"  />
     <arg name="map_ymin"         default="-60" />
@@ -13,26 +6,20 @@
     <arg name="map_spn"          default="50"  /> -->
 
     <!-- Processing nodes -->
-    <node name="map_server" pkg="map_server" type="map_server" args="$(arg map_path)$(arg map_name).yaml" />
 
     <node name="rssi_localization_server" pkg="krp_localization" type="rssi_localization_server">
         <param name="train_data_prefix"        value="wholemap" />
-        <param name="train_data_fuse"          value="1" />
+        <param name="train_data_fuse"          value="2" />
         <param name="flag_self_localization"   value="true" />
         <param name="flag_negative_db"         value="true" />
-        <param name="nsamples"                 value="100" />
+        <param name="nsamples"                 value="150" />
         <param name="K"                        value="75" />
         <param name="mode"                     value="max_gaussian_mean_sampling" />
-        <param name="max_gaussian_mean_stdX"   value="1" />
-        <param name="max_gaussian_mean_stdY"   value="1" />
+        <param name="max_gaussian_mean_stdX"   value="1.5" />
+        <param name="max_gaussian_mean_stdY"   value="1.5" />
     </node>
 
     <node name="prob_mesh_visualizer" pkg="krp_localization" type="prob_mesh_visualizer">
         <param name="sub_topic"                value="rssi_loc_server_prob_mesh" />
     </node>
-
-    <group if="$(arg visualization)">
-        <node name="rviz" pkg="rviz" type="rviz"  args="-d $(find krp_localization)/rviz/test_rssi_localization.rviz"/>
-    </group>
-
 </launch>
