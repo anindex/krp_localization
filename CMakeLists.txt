@@ -53,7 +53,6 @@ add_message_files(
    FILES
    RSSI.msg
    RSSIData.msg
-   ProbArray.msg
 )
 
 ## Generate services in the 'srv' folder

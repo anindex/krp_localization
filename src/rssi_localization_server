@@ -42,7 +42,7 @@ class RSSILocalizationServer():
         self.max_gaussian_mean_stdX              = rospy.get_param('~max_gaussian_mean_stdX', 0.5)
         self.max_gaussian_mean_stdY              = rospy.get_param('~max_gaussian_mean_stdY', 0.5)
 
-        train_data_prefix = rospy.get_param('~train_data_prefix', "test")
+        train_data_prefix = rospy.get_param('~train_data_prefix', "wholemap")
         train_data_path = rospy.get_param('~train_data_path', rospack.get_path('krp_localization') + "/data/")
         trained_model_path = rospy.get_param('~trained_model_path', None)
 
@@ -66,7 +66,7 @@ class RSSILocalizationServer():
             # Load model
             data_empty = {'X':np.asarray([[1,1]]),'Y':np.asarray([1]),'Var':np.asarray([1])}
             self.model = hGP(data_empty,verbose=True, sampling=accept_reject_uniform, Xtest_num=self.K)
-            self.model.load(filepath=self.trained_model_path)
+            self.model.load(filepath=trained_model_path)
 
         else:
             rospy.loginfo('Loading train data path: {}'.format(train_data_path))

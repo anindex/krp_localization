@@ -1,0 +1,34 @@
+<launch>
+    <!-- wifi parameters -->
+    <arg name="flag_real_environment" default="true"/>
+
+    <group if="$(arg flag_real_environment)">
+      <include file="$(find krp_localization)/launch/probe_rssi.launch" />
+
+      <include file="$(find youbot_navigation)/launch/static_map_amcl.launch">
+        <arg name="map_name"  value="$(arg map_name)"/>
+      </include>
+
+      <node name="rviz" pkg="rviz" type="rviz"  args="-d $(find krp_localization)/launch/playback.rviz"/>
+    </group>
+
+    <node name="rssi_localization_server" pkg="krp_localization" type="rssi_localization_server">
+        <param name="train_data_prefix"        value="wholemap" />
+        <param name="train_data_fuse"          value="2" />
+        <param name="flag_self_localization"   value="false" />
+        <param name="flag_negative_db"         value="true" />
+        <param name="K"                        value="75" />
+        <param name="mode"                     value="max_gaussian_mean_sampling" />
+        <param name="max_gaussian_mean_stdX"   value="1.5" />
+        <param name="max_gaussian_mean_stdY"   value="1.5" />
+    </node>
+
+    <node name="krp_localization_rssi" pkg="krp_localization" type="krp_localization_rssi">
+        <param name="global_localization"              value="true"/>
+        <param name="freq"                             value="1"/>
+        <param name="nsamples"                         value="300"/>
+        <param name="rssi_len"                         value="1"/>
+        <param name="rssi_weightstd_krp_thres"         value="0.05"/>
+        <param name="rssi_weightmean_krp_thres"        value="0.05"/>
+    </node>
+</launch>

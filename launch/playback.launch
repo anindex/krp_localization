@@ -1,6 +1,6 @@
 <launch>
   <param name="use_sim_time" value="true" />
-  
+
   <arg name="visualization"    default="true" />
   <arg name="bag_path"         default="$(find krp_localization)/bags/"/>
   <arg name="bag_name"         default="krp1"/>
