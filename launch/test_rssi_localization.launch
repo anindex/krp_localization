@@ -15,7 +15,7 @@
         <param name="flag_negative_db"         value="true" />
         <param name="nsamples"                 value="150" />
         <param name="K"                        value="75" />
-        <param name="mode"                     value="max_gaussian_mean_sampling" />
+        <param name="mode"                     value="prob_mesh_sampling" />
         <param name="max_gaussian_mean_stdX"   value="1.5" />
         <param name="max_gaussian_mean_stdY"   value="1.5" />
     </node>

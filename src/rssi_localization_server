@@ -53,6 +53,12 @@ class RSSILocalizationServer():
         flag_mode_filter = rospy.get_param('~flag_mode_filter', False)
         flag_discard_non_pose = rospy.get_param('~flag_discard_non_pose', True)
 
+        # sampling flag
+        self.flag_boost_weight            = rospy.get_param('~flag_boost_weight', True)
+        self.weight_scale                 = rospy.get_param('~weight_scale', 3.0)
+        self.near_max_weight_threshold    = rospy.get_param('~near_max_weight_threshold', 0.01)
+        self.boost_weight_mode            = rospy.get_param('~boost_weight_mode', "near_max_scaling")
+
         train_data_fuse = rospy.get_param('~train_data_fuse', 2)
 
         if flag_self_localization:
@@ -227,7 +233,11 @@ class RSSILocalizationServer():
                         samples     = self.model.sample(measurement,span=(x_min,x_max,y_min,y_max),
                                                                     nsamples=nsamples,
                                                                     K=50,
-                                                                    batch=1)
+                                                                    batch=1,
+                                                                    flag_boost_weight=self.flag_boost_weight,
+                                                                    weight_scale=self.weight_scale,
+                                                                    near_max_weight_threshold=self.near_max_weight_threshold,
+                                                                    boost_weight_mode=self.boost_weight_mode)
                         pose_array.poses = [pose_from_array(x) for x in samples]
                         weights = self.model.jointpdf(samples, rssi_data.data['Y'])
                     except:

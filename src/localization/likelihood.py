@@ -100,17 +100,8 @@ class Gaussian(Likelihood):
 
         #model prediction
         ypredict, varpredict = model.predict(Xn)
-
-        #compute likelihood for all testpoints and access points
-        #if varpredict.shape[1] == 1:
-        var  = varpredict.copy()
-
-        xs   = measurement
-        mus  = ypredict
-        #if varpredict.shape[1] > 1:
-        #    var  = varpredict#[:,i:i+1] #error fix
-
-        pX   = self.prob_sensormodel(xs,mus,var)
+        
+        pX   = self.prob_sensormodel(measurement,ypredict,varpredict)
 
         return pX
 
