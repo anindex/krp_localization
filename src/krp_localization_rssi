@@ -19,7 +19,7 @@ from krp_localization.msg import RSSIData
 from krp_localization.srv import RSSILocalization, RSSIParticleInit
 
 from localization.sampling import resampling_wheel_pose_array
-from utils.structures import pose_from_array_orientation, get_best_pose, pose_from_array
+from utils.structures import pose_from_array_orientation, pose_from_array
 
 
 class KRPWifi():
@@ -54,7 +54,7 @@ class KRPWifi():
 
         #publishers
         self.pub_pose_array = rospy.Publisher("rssi_poses", PoseArray, queue_size=1)
-        self.pub_prob_mesh  = rospy.Publisher("rssi_prob_mesh", Float64MultiArray, queue_size=1)
+        self.pub_prob_mesh  = rospy.Publisher("rssi_prob_mesh_array", Float64MultiArray, queue_size=1)
         self.pub_pose_best = rospy.Publisher("rssi_pose_best", PoseStamped, queue_size=1)
         #self.pub_pose_weighted = rospy.Publisher("rssi_pose_weighted", PoseStamped, queue_size=1)
 
@@ -62,7 +62,7 @@ class KRPWifi():
         if self.global_localization:
             request = RSSIParticleInit()
             request.nsamples = self.nsamples
-            self.callback_wifiinit(request)
+            self.callback_rssi_particle_init(request)
 
         #MAIN LOOP
         r = rospy.Rate(1)
@@ -78,7 +78,7 @@ class KRPWifi():
     def callback_rssi(self, rssi):
         if len(self.raw_rssi) >= self.rssi_len:
             self.raw_rssi.pop(0) #remove oldest rss
-        self.raw_rssi.append(rss)
+        self.raw_rssi.append(rssi)
 
 
     def callback_posearray(self, poses):
@@ -98,25 +98,26 @@ class KRPWifi():
         try:
             rospy.wait_for_service(self.ns+'rssi_localization',timeout=2)
         except:
+            time.sleep(.5)
             rospy.logwarn('RSSI localization server is not ready!')
             return False
 
         loc_server = rospy.ServiceProxy(self.ns+'rssi_localization', RSSILocalization)
 
         try:
-            loc = loc_server(self.raw_rssi, len(poses), poses)
+            loc = loc_server(self.raw_rssi, len(poses.poses), poses)
         except:
             e = sys.exc_info()[0]
             rospy.logerr('RSSI localization server: Localization failed: ' + str(e))
             return False
 
         weights = np.asarray(loc.weights)
-        rospy.loginfo('RSSI max weights: {}, mean weight: {}, std weight: {}\t',np.max(weights), np.mean(weights), np.std(weights))
+        rospy.loginfo('RSSI max weights: {}, mean weight: {}, std weight: {}\t'.format(np.max(weights), np.mean(weights), np.std(weights)))
 
         best_pose = PoseStamped()
         best_pose.header.frame_id  = self.global_frame_id
         best_pose.header.stamp     = time_stamp
-        best_pose.pose             = pose_from_array(get_best_pose(loc.pose_array, weights))
+        best_pose.pose             = loc.pose_array.poses[np.argmax(weights)]
         self.pub_pose_best.publish(best_pose)
 
         prob_mesh = Float64MultiArray()
@@ -131,28 +132,25 @@ class KRPWifi():
             rs_pose_array.header.stamp     = time_stamp
             self.pub_pose_array.publish(rs_pose_array)
 
-            index = np.argmax(rs_weights)
-            best_pose.pose                 = rs_pose_array[index]
+            best_pose.pose                 = rs_pose_array.poses[np.argmax(rs_weights)]
             self.pub_pose_best.publish(best_pose)
             #self.flag_rssi_resampling = False
 
-
-
-            rospy.loginfo('RSSI after resampling max weights: {}, mean weight: {}, std weight: {}\t',np.max(rs_weights), np.mean(rs_weights), np.std(rs_weights))
+            rospy.loginfo('RSSI after resampling max weights: {}, mean weight: {}, std weight: {}\t'.format(np.max(rs_weights), np.mean(rs_weights), np.std(rs_weights)))
 
         #if np.mean(weights) > self.rssi_weightmean_krp_thres:
         # TODOs: define detect krp logic
 
         return True
 
-    def callback_wifiinit(self, req):
+    def callback_rssi_particle_init(self, req):
         nsamples = req.nsamples
         loc = False
         t0 = time.time()
         count = 1
         while (not loc):
             rospy.loginfo('RSSI particle initialization attempt {}'.format(count))
-            loc = self.wifinit(nsamples)
+            loc = self.rssi_init(nsamples)
             count += 1
         rospy.loginfo('Initilization finished!')
         rospy.loginfo('elapsed time {:} ms'.format(int((time.time()-t0)*1000)))
@@ -162,14 +160,14 @@ class KRPWifi():
         self.seq += 1
         pose_array.header.frame_id  = self.global_frame_id
         pose_array.header.stamp     = rospy.get_rostime()
-        pose_array.poses    = [pose_from_array_orientation(x) for x in self.particles]
+        pose_array.poses    = [pose_from_array_orientation(x) for x in loc[0]]
         self.pub_pose_array.publish(pose_array)
 
         prob_mesh = Float64MultiArray()
-        prob_mesh.data = loc.prob_mesh
+        prob_mesh.data = loc[2]
         self.pub_prob_mesh.publish(prob_mesh)
 
-    def wifiinit(self, nsamples):
+    def rssi_init(self, nsamples):
         #sample wifi model for particles
         if len(self.raw_rssi) < self.rssi_len: #ensure at least min_rss+len samples have been obtained
             time.sleep(.5)
@@ -179,6 +177,7 @@ class KRPWifi():
             rospy.wait_for_service(self.ns+'rssi_localization',timeout=2)
         except:
             rospy.logwarn('RSSI localization server is not ready!')
+            time.sleep(.5)
             return
 
         loc_server = rospy.ServiceProxy(self.ns+'rssi_localization', RSSILocalization)

@@ -2,6 +2,8 @@ import numpy as np
 from utils.structures import mesh
 from scipy.stats import gaussian_kde
 
+from geometry_msgs.msg import PoseArray
+
 
 def resampling_wheel_pose_array(pose_array,weights,nsamples=None):
     if nsamples is None:

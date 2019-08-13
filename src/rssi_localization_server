@@ -225,8 +225,7 @@ class RSSILocalizationServer():
                     index = np.argmax(prob_mesh)
                     pose_array.poses.append(pose_from_array(Xtest[index, :]))
 
-                    weights = list()
-                    weights.append(prob_mesh[index])
+                    weights = np.array([prob_mesh[index]])
                 else:
                     try:
                         measurement = rssi_data.data['Y']

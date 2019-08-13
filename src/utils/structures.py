@@ -29,10 +29,3 @@ def pose_from_array_orientation(array):
     pose.orientation.z = quat[2]
     pose.orientation.w = quat[3]
     return pose
-
-def get_best_pose(pose_array, weights):
-    if not pose_array or len(pose_array) != len(weights):
-        return
-
-    index = np.argmax(weights)
-    return pose_array[index, :]
