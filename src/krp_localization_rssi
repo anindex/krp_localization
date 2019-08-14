@@ -189,7 +189,7 @@ class KRPWifi():
             rospy.logerr('RSSI localization server: Localization failed: ' + str(e))
             return
 
-        poses = np.asarray([[p.position.x, p.position.y,tf.transformations.euler_from_quaternion((0.,0.,p.orientation.z,p.orientation.w))[2]] for p in loc.pose_array.poses])
+        poses = np.asarray([[p.position.x, p.position.y, 0] for p in loc.pose_array.poses])
 
         #all sampled particles have orientation zero
         #randomize theta

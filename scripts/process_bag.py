@@ -14,7 +14,7 @@ output_bag3 = rospack.get_path('krp_localization') + '/bags/krp1-3.bag'
 krp_bag1    = rospack.get_path('krp_localization') + '/bags/krp1.bag'
 krp_bag2    = rospack.get_path('krp_localization') + '/bags/krp2.bag'
 
-rosbag_croptime(file_path, output_bag1, tend=1565603518)
+rosbag_croptime(file_path, output_bag1, tend=1565603535)
 rosbag_croptime(file_path, output_bag2, tstart=1565603580, tend=1565603650)
 rosbag_croptime(file_path, output_bag3, tstart=1565603680, tend=1565603720)
 #rosbag_inspect(output_bag1)

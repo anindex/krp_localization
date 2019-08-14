@@ -43,6 +43,11 @@ class Gaussian(Likelihood):
         self.confidence_zero = kwargs.get('confidence_zero',0.)
         self.pzero           = kwargs.get('pzero',.05)
 
+        self.flag_boost_weight            = kwargs.get('flag_boost_weight', True)
+        self.weight_scale                 = kwargs.get('weight_scale', 3.0)
+        self.near_max_weight_threshold    = kwargs.get('near_max_weight_threshold', 0.01)
+        self.boost_weight_mode            = kwargs.get('boost_weight_mode', "near_max_scaling")
+
     def prob_sensormodel(self,x,mu,var,**kwargs):
         """
         Calculates the probability of each individual access point by integrating the density
@@ -100,7 +105,7 @@ class Gaussian(Likelihood):
 
         #model prediction
         ypredict, varpredict = model.predict(Xn)
-        
+
         pX   = self.prob_sensormodel(measurement,ypredict,varpredict)
 
         return pX
@@ -116,7 +121,11 @@ class Gaussian(Likelihood):
             np measurement points of all nap wireless measurements as a numpy array [np, nap]
         """
 
-        confidence_zero = kwargs.get('confidence_zero',self.confidence_zero)
+        confidence_zero              = kwargs.get('confidence_zero',self.confidence_zero)
+        flag_boost_weight            = kwargs.get('flag_boost_weight', self.flag_boost_weight)
+        weight_scale                 = kwargs.get('weight_scale', self.weight_scale)
+        near_max_weight_threshold    = kwargs.get('near_max_weight_threshold', self.near_max_weight_threshold)
+        boost_weight_mode            = kwargs.get('boost_weight_mode', self.boost_weight_mode)
 
         pX = self.likelihood(model,Xn,Yn,**kwargs)
         log_pX = np.log(pX)
@@ -127,6 +136,19 @@ class Gaussian(Likelihood):
         alpha[index[0]] *= confidence_zero
         #normalize to one
         alpha = alpha/np.sum(alpha)
-        px = np.dot(log_pX,alpha) #log_px*alpha = prod(pX[i]*alpha[i])
+        px = np.exp(np.dot(log_pX,alpha)) #log_px*alpha = prod(pX[i]*alpha[i])
 
-        return np.exp(px)
+        #hack to boost weights higher than mean and suppress weight lower
+        if flag_boost_weight:
+            maxpx, meanpx = np.max(px), np.mean(px)
+            method = None
+            if boost_weight_mode == "near_max_scaling":
+                method = np.vectorize(lambda x: x * weight_scale if (maxpx - x) <= near_max_weight_threshold else x / weight_scale)
+            elif boost_weight_mode == "mean_scaling":
+                method = np.vectorize(lambda x: x * weight_scale if x > meanpx else x / weight_scale)
+            else:
+                print("Invalid boost weight mode: Modes are near_max_scaling and mean_scaling!")
+                return [None, None, None]
+            px = method(px)
+
+        return px

@@ -70,12 +70,6 @@ def accept_reject_uniform(fun, *args, **kwargs):
     npoints  = batch*nsamples
     samples  = np.empty((1,dim))
 
-    flag_boost_weight            = kwargs.get('flag_boost_weight', True)
-    weight_scale                 = kwargs.get('weight_scale', 3.0)
-    near_max_weight_threshold    = kwargs.get('near_max_weight_threshold', 0.01)
-    boost_weight_mode            = kwargs.get('boost_weight_mode', "near_max_scaling")
-
-
     _min_x     = min_max[0]*1.0
     _min_y     = min_max[2]*1.0
     _span_x    = min_max[1]*1.0-min_max[0]*1.0
@@ -88,20 +82,7 @@ def accept_reject_uniform(fun, *args, **kwargs):
 
         if dim == 2 and dim2_0:
             x[:,1] = x[:,1]*0
-        px = fun(x, *args)
-
-        #hack to boost weights higher than mean and suppress weight lower
-        if flag_boost_weight:
-            maxpx, meanpx = np.max(px), np.mean(px)
-            method = None
-            if boost_weight_mode == "near_max_scaling":
-                method = np.vectorize(lambda x: x * weight_scale if (maxpx - x) <= near_max_weight_threshold else x / weight_scale)
-            elif boost_weight_mode == "mean_scaling":
-                method = np.vectorize(lambda x: x * weight_scale if x > meanpx else x / weight_scale)
-            else:
-                print("Invalid boost weight mode: Modes are near_max_scaling and mean_scaling!")
-                return [None, None, None]
-            px = method(px)
+        px = fun(x, **kwargs)
 
         u = np.random.rand(npoints)*(1.-u_min)+u_min
         samples = np.append(samples,x[u<(px/max_fun),:],axis=0)

@@ -2,6 +2,7 @@
     <!-- wifi parameters -->
     <arg name="flag_real_environment" default="false"/>
     <arg name="visualization"         default="true"/>
+    <arg name="global_localization" default="true"/>
 
     <group if="$(arg flag_real_environment)">
       <include file="$(find krp_localization)/launch/probe_rssi.launch" />
@@ -15,6 +16,7 @@
       <include file="$(find krp_localization)/launch/playback.launch">
         <arg name="visualization"  value="false"/>
         <arg name="localization"   value="false" />
+        <arg name="bag_name"   value="krp2" />
       </include>
 
       <node pkg="amcl" type="amcl" name="amcl">
@@ -60,20 +62,26 @@
         <param name="trained_model_path"       value="$(find krp_localization)/models/model_wholemap.p" />
         <param name="flag_self_localization"   value="false" />
         <param name="flag_negative_db"         value="true" />
+        <param name="flag_boost_weight"        value="true" />
+        <param name="boost_weight_mode"         value="near_max_scaling" />
         <param name="K"                        value="75" />
-        <param name="mode"                     value="prob_mesh_sampling" />
+        <param name="mode"                     value="max_gaussian_mean_sampling" />
         <param name="max_gaussian_mean_stdX"   value="1.5" />
         <param name="max_gaussian_mean_stdY"   value="1.5" />
     </node>
 
     <node name="krp_localization_rssi" pkg="krp_localization" type="krp_localization_rssi">
-        <param name="global_localization"              value="true"/>
+        <param name="global_localization"              value="$(arg global_localization)"/>
         <param name="freq"                             value="1"/>
         <param name="nsamples"                         value="300"/>
         <param name="rssi_len"                         value="1"/>
         <param name="rssi_weightstd_krp_thres"         value="0.05"/>
         <param name="rssi_weightmean_krp_thres"        value="0.05"/>
     </node>
+
+    <group if="$(arg global_localization)">
+        <node pkg="rosservice" type="rosservice" name="global_loc" args="call --wait /global_localization"/>
+    </group>
 
     <group if="$(arg visualization)">
       <node name="prob_mesh_visualizer" pkg="krp_localization" type="prob_mesh_visualizer">
