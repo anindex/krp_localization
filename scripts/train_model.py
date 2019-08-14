@@ -36,7 +36,7 @@ print('Average distance between points : {}'.format(np.round(avg_distance,2)))
 
 #Train model
 print('Training model')
-model = hGP(traindata.data,all_mac_dict=traindata.all_mac_dict, sampling=accept_reject_uniform, Xtest_num=75)
+model = hGP(traindata.data,all_mac_dict=traindata.all_mac_dict, sampling=accept_reject_by_regions_map, Xtest_num=75)
 model.optimize()
 print('Model trained successfully')
 

@@ -73,7 +73,7 @@ class RSSILocalizationServer():
         if trained_model_path:
             # Load model
             data_empty = {'X':np.asarray([[1,1]]),'Y':np.asarray([1]),'Var':np.asarray([1])}
-            self.model = hGP(data_empty,verbose=True, sampling=accept_reject_uniform, Xtest_num=self.K)
+            self.model = hGP(data_empty,verbose=True, sampling=accept_reject_by_regions_map, Xtest_num=self.K)
             self.model.load(filepath=trained_model_path)
 
         else:
@@ -101,7 +101,7 @@ class RSSILocalizationServer():
 
             #Train model
             rospy.loginfo('Training model')
-            self.model = hGP(traindata.data,all_mac_dict=traindata.all_mac_dict, sampling=accept_reject_uniform, Xtest_num=self.K)
+            self.model = hGP(traindata.data,all_mac_dict=traindata.all_mac_dict, sampling=accept_reject_by_regions_map, Xtest_num=self.K)
             self.model.optimize()
             rospy.loginfo('Model trained successfully')
 

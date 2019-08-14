@@ -13,11 +13,12 @@
         <param name="trained_model_path"       value="$(find krp_localization)/models/model_wholemap.p" />
         <param name="flag_self_localization"   value="true" />
         <param name="flag_negative_db"         value="true" />
-        <param name="nsamples"                 value="150" />
+        <param name="flag_boost_weight"        value="true" />
+        <param name="boost_weight_mode"        value="near_max_scaling" />
         <param name="K"                        value="75" />
         <param name="mode"                     value="prob_mesh_sampling" />
-        <param name="max_gaussian_mean_stdX"   value="1.5" />
-        <param name="max_gaussian_mean_stdY"   value="1.5" />
+        <param name="max_gaussian_mean_stdX"   value="1" />
+        <param name="max_gaussian_mean_stdY"   value="1" />
     </node>
 
     <node name="prob_mesh_visualizer" pkg="krp_localization" type="prob_mesh_visualizer">
