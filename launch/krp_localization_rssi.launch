@@ -16,7 +16,7 @@
       <include file="$(find krp_localization)/launch/playback.launch">
         <arg name="visualization"  value="false"/>
         <arg name="localization"   value="false" />
-        <arg name="bag_name"   value="krp2" />
+        <arg name="bag_name"   value="krp1" />
       </include>
 
       <node pkg="amcl" type="amcl" name="amcl">
@@ -63,20 +63,23 @@
         <param name="flag_self_localization"   value="false" />
         <param name="flag_negative_db"         value="true" />
         <param name="flag_boost_weight"        value="true" />
-        <param name="boost_weight_mode"         value="near_max_scaling" />
+        <param name="boost_weight_mode"        value="near_max_scaling" />
         <param name="K"                        value="75" />
-        <param name="mode"                     value="max_gaussian_mean_sampling" />
-        <param name="max_gaussian_mean_stdX"   value="1.5" />
-        <param name="max_gaussian_mean_stdY"   value="1.5" />
+        <param name="mode"                     value="prob_mesh_sampling" />
+        <param name="max_gaussian_mean_stdX"   value="1" />
+        <param name="max_gaussian_mean_stdY"   value="1" />
     </node>
 
     <node name="krp_localization_rssi" pkg="krp_localization" type="krp_localization_rssi">
         <param name="global_localization"              value="$(arg global_localization)"/>
         <param name="freq"                             value="1"/>
+        <param name="mean_reset_stabilize_time"        value="10"/>
+        <param name="std_resample_stabilize_time"      value="2"/>
+        <param name="flag_rssi_resampling"             value="false" />
         <param name="nsamples"                         value="300"/>
         <param name="rssi_len"                         value="1"/>
-        <param name="rssi_weightstd_krp_thres"         value="0.05"/>
-        <param name="rssi_weightmean_krp_thres"        value="0.05"/>
+        <param name="rssi_weightstd_krp_thres"         value="0.15"/>
+        <param name="rssi_weightmean_krp_thres"        value="0.1"/>
     </node>
 
     <group if="$(arg global_localization)">

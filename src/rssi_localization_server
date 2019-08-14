@@ -61,6 +61,8 @@ class RSSILocalizationServer():
 
         train_data_fuse = rospy.get_param('~train_data_fuse', 2)
 
+        self.debug                        = rospy.get_param('~debug', False)
+
         if flag_self_localization:
             self.raw_rssi    = list()
             rospy.Subscriber(self.ns + 'rssi', RSSIData, self.callback_rssi)
@@ -186,8 +188,9 @@ class RSSILocalizationServer():
                                                 flag_fuse_measurements=True,
                                                 filter_fuse_measurements=len(raw_rssi)) # fuse all into 1 measurement and average
 
-        rospy.loginfo('Model receives {} acccess points out of {}'.format(len(raw_rssi[0].macs), len(self.model.all_mac_dict)))
-        rospy.loginfo('Request {} nsamples and pose array len: {}'.format(nsamples, len(pose_array.poses) if pose_array else 0))
+        if self.debug:
+            rospy.loginfo('Model receives {} acccess points out of {}'.format(len(raw_rssi[0].macs), len(self.model.all_mac_dict)))
+            rospy.loginfo('Request {} nsamples and pose array len: {}'.format(nsamples, len(pose_array.poses) if pose_array else 0))
 
         temp_x  = np.linspace(x_min,x_max,spn)
         temp_y  = np.linspace(y_min,y_max,spn)
