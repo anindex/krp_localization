@@ -7,9 +7,7 @@
     <group if="$(arg flag_real_environment)">
       <include file="$(find krp_localization)/launch/probe_rssi.launch" />
 
-      <include file="$(find youbot_navigation)/launch/static_map_amcl.launch">
-        <arg name="map_name"  value="$(arg map_name)"/>
-      </include>
+      <include file="$(find youbot_navigation)/launch/static_map_amcl.launch"/>
     </group>
 
     <group unless="$(arg flag_real_environment)">
