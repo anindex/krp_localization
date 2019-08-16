@@ -73,7 +73,7 @@ class RSSILocalizationServer():
         if trained_model_path:
             # Load model
             data_empty = {'X':np.asarray([[1,1]]),'Y':np.asarray([1]),'Var':np.asarray([1])}
-            self.model = hGP(data_empty,verbose=True, sampling=accept_reject_by_regions_map, Xtest_num=self.K)
+            self.model = hGP(data_empty,verbose=True, sampling=accept_reject_uniform, Xtest_num=self.K)
             self.model.load(filepath=trained_model_path)
 
         else:
@@ -101,7 +101,7 @@ class RSSILocalizationServer():
 
             #Train model
             rospy.loginfo('Training model')
-            self.model = hGP(traindata.data,all_mac_dict=traindata.all_mac_dict, sampling=accept_reject_by_regions_map, Xtest_num=self.K)
+            self.model = hGP(traindata.data,all_mac_dict=traindata.all_mac_dict, sampling=accept_reject_uniform, Xtest_num=self.K)
             self.model.optimize()
             rospy.loginfo('Model trained successfully')
 
@@ -116,7 +116,7 @@ class RSSILocalizationServer():
 
         r = rospy.Rate(1)  #1Hz
         while not rospy.is_shutdown():
-            if flag_self_localization and len(self.raw_rssi) > 1:
+            if flag_self_localization and len(self.raw_rssi) > 2:
                 rssi_list, self.raw_rssi = self.raw_rssi, []
                 loc = self.sample_from_model(rssi_list, self.nsamples, None)
 
@@ -243,7 +243,7 @@ class RSSILocalizationServer():
                         samples     = self.model.sample(measurement,span=(x_min,x_max,y_min,y_max),
                                                                     nsamples=nsamples,
                                                                     K=50,
-                                                                    batch=1,
+                                                                    batch=2,
                                                                     flag_boost_weight=self.flag_boost_weight,
                                                                     weight_scale=self.weight_scale,
                                                                     near_max_weight_threshold=self.near_max_weight_threshold,

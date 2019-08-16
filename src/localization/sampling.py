@@ -70,6 +70,8 @@ def accept_reject_uniform(fun, *args, **kwargs):
     npoints  = batch*nsamples
     samples  = np.empty((1,dim))
 
+    reject_thres    = kwargs.get('reject_thres', 0.00)
+
     _min_x     = min_max[0]*1.0
     _min_y     = min_max[2]*1.0
     _span_x    = min_max[1]*1.0-min_max[0]*1.0
@@ -85,7 +87,7 @@ def accept_reject_uniform(fun, *args, **kwargs):
         px = fun(x, **kwargs)
 
         u = np.random.rand(npoints)*(1.-u_min)+u_min
-        samples = np.append(samples,x[u<(px/max_fun),:],axis=0)
+        samples = np.append(samples, x[(u < px/max_fun) & (px > reject_thres),:],axis=0)
         rep = rep+1
         max_fun = 0.9*max_fun
     return samples[1:nsamples+1,:], rep, len(samples)

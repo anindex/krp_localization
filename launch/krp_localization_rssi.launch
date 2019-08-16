@@ -33,7 +33,7 @@
         <param name="freq"                             value="1"/>
         <param name="mean_reset_stabilize_time"        value="10"/>
         <param name="std_resample_stabilize_time"      value="2"/>
-        <param name="flag_rssi_resampling"             value="false" />
+        <param name="flag_rssi_resampling"             value="true" />
         <param name="nsamples"                         value="300"/>
         <param name="rssi_len"                         value="1"/>
         <param name="rssi_weightstd_krp_thres"         value="0.15"/>

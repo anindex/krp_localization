@@ -1,27 +1,29 @@
 <launch>
-    <!-- <arg name="map_xmin"         default="-25" />
-    <arg name="map_xmax"         default="55"  />
-    <arg name="map_ymin"         default="-60" />
-    <arg name="map_ymax"         default="20"  />
-    <arg name="map_spn"          default="50"  /> -->
+  <arg name="train_data_prefix"         default="test2"  />
+  <arg name="trained_model_path"        default="$(find krp_localization)/models/model_test2.p"  />
+  <!-- <arg name="map_xmin"         default="-25" />
+  <arg name="map_xmax"         default="55"  />
+  <arg name="map_ymin"         default="-60" />
+  <arg name="map_ymax"         default="20"  />
+  <arg name="map_spn"          default="50"  /> -->
 
-    <!-- Processing nodes -->
+  <!-- Processing nodes -->
 
-    <node name="rssi_localization_server" pkg="krp_localization" type="rssi_localization_server">
-        <param name="train_data_prefix"        value="wholemap" />
-        <param name="train_data_fuse"          value="2" />
-        <param name="trained_model_path"       value="$(find krp_localization)/models/model_wholemap.p" />
-        <param name="flag_self_localization"   value="true" />
-        <param name="flag_negative_db"         value="true" />
-        <param name="flag_boost_weight"        value="true" />
-        <param name="boost_weight_mode"        value="near_max_scaling" />
-        <param name="K"                        value="75" />
-        <param name="mode"                     value="prob_mesh_sampling" />
-        <param name="max_gaussian_mean_stdX"   value="1" />
-        <param name="max_gaussian_mean_stdY"   value="1" />
-    </node>
+  <node name="rssi_localization_server" pkg="krp_localization" type="rssi_localization_server">
+      <param name="train_data_prefix"        value="$(arg train_data_prefix)" />
+      <param name="train_data_fuse"          value="2" />
+      <param name="trained_model_path"       value="$(arg trained_model_path)" />
+      <param name="flag_self_localization"   value="true" />
+      <param name="flag_negative_db"         value="false" />
+      <param name="flag_boost_weight"        value="true" />
+      <param name="boost_weight_mode"        value="near_max_scaling" />
+      <param name="K"                        value="75" />
+      <param name="mode"                     value="max_gaussian_mean_sampling" />
+      <param name="max_gaussian_mean_stdX"   value="1" />
+      <param name="max_gaussian_mean_stdY"   value="1" />
+  </node>
 
-    <node name="prob_mesh_visualizer" pkg="krp_localization" type="prob_mesh_visualizer">
-        <param name="sub_topic"                value="rssi_loc_server_prob_mesh" />
-    </node>
+  <node name="prob_mesh_visualizer" pkg="krp_localization" type="prob_mesh_visualizer">
+      <param name="sub_topic"                value="rssi_loc_server_prob_mesh" />
+  </node>
 </launch>
