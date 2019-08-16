@@ -18,7 +18,8 @@
       <param name="flag_boost_weight"        value="true" />
       <param name="boost_weight_mode"        value="near_max_scaling" />
       <param name="K"                        value="75" />
-      <param name="mode"                     value="max_gaussian_mean_sampling" />
+      <param name="nsamples"                 value="150" />
+      <param name="mode"                     value="prob_mesh_sampling" />
       <param name="max_gaussian_mean_stdX"   value="1" />
       <param name="max_gaussian_mean_stdY"   value="1" />
   </node>
