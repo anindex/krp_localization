@@ -1,0 +1,7 @@
+<launch>
+  <node name="prob_mesh_visualizer" pkg="krp_localization" type="prob_mesh_visualizer">
+      <param name="sub_topic"                value="rssi_prob_mesh_array" />
+  </node>
+
+  <node name="rviz" pkg="rviz" type="rviz"  args="-d $(find krp_localization)/rviz/krp_localization_rssi.rviz"/>
+</launch>
