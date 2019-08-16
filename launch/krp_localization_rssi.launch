@@ -1,16 +1,10 @@
 <launch>
     <!-- wifi parameters -->
-    <arg name="flag_real_environment" default="false"/>
+    <arg name="flag_simulation" default="false"/>
     <arg name="visualization"         default="true"/>
     <arg name="global_localization" default="true"/>
 
-    <group if="$(arg flag_real_environment)">
-      <include file="$(find krp_localization)/launch/probe_rssi.launch" />
-
-      <include file="$(find youbot_navigation)/launch/static_map_amcl.launch"/>
-    </group>
-
-    <group unless="$(arg flag_real_environment)">
+    <group if="$(arg flag_simulation)">
       <include file="$(find krp_localization)/launch/playback.launch">
         <arg name="visualization"  value="false"/>
         <arg name="localization"   value="false" />
@@ -29,7 +23,7 @@
         <param name="flag_boost_weight"        value="true" />
         <param name="boost_weight_mode"        value="near_max_scaling" />
         <param name="K"                        value="75" />
-        <param name="mode"                     value="prob_mesh_sampling" />
+        <param name="mode"                     value="max_gaussian_mean_sampling" />
         <param name="max_gaussian_mean_stdX"   value="1" />
         <param name="max_gaussian_mean_stdY"   value="1" />
     </node>

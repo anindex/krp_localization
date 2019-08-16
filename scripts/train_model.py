@@ -25,7 +25,7 @@ traindata = PreprocessedData(raw_rssi, flag_negative_db         = True,
                                        flag_mode_filter         = False,
                                        flag_discard_non_pose    = True,
                                        poses                    = poses,
-                                       filter_fuse_measurements = 1)
+                                       filter_fuse_measurements = 2)
 
 distance = np.sum(traindata.data['X'][1:]**2 + traindata.data['X'][:-1]**2 - 2*traindata.data['X'][1:]*traindata.data['X'][:-1],axis=1)**.5
 avg_distance = np.mean(distance)
