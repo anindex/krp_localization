@@ -10,7 +10,7 @@ import numpy as np
 rospack = rospkg.RosPack()
 
 map_path = rospack.get_path('krp_localization') + '/maps/test'
-train_data_prefix = "wholemap"
+train_data_prefix = "test4"
 train_data_path   = rospack.get_path('krp_localization') + '/data/'
 
 print('Loading train data path: {}'.format(train_data_path))
