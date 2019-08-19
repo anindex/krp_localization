@@ -1,6 +1,6 @@
 <launch>
     <arg name="bag_path"    default="$(find krp_localization)/bags" />
-    <arg name="bag_name"    default="test2" />
+    <arg name="bag_name"    default="test3" />
 
     <arg name="bag"    default="true" />
     <arg name="save"    default="true" />
@@ -11,7 +11,7 @@
 
     <group if="$(arg save)">
       <node name="save_data" pkg="krp_localization" type="record_data">
-        <param name="file_name_prefix" value="test2"/>
+        <param name="file_name_prefix" value="test3"/>
       </node>
     </group>
 </launch>

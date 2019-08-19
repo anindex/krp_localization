@@ -18,7 +18,7 @@
 
     <node name="rssi_localization_server" pkg="krp_localization" type="rssi_localization_server">
         <param name="train_data_prefix"        value="test2" />
-        <param name="train_data_fuse"          value="2" />
+        <param name="train_data_fuse"          value="1" />
         <param name="trained_model_path"       value="$(find krp_localization)/models/model_test2.p" />
         <param name="flag_self_localization"   value="false" />
         <param name="flag_negative_db"         value="false" />
@@ -37,7 +37,7 @@
         <param name="std_resample_stabilize_time"      value="2"/>
         <param name="flag_rssi_resampling"             value="false" />
         <param name="flag_krp_sampling"                value="false" />
-        <param name="nsamples"                         value="150"/>
+        <param name="nsamples"                         value="200"/>
         <param name="rssi_len"                         value="1"/>
         <param name="rssi_weightstd_krp_thres"         value="0.15"/>
         <param name="rssi_weightmean_krp_thres"        value="0.01"/>

@@ -182,6 +182,9 @@ class KRPWifi():
         rospy.loginfo('Initilization finished!')
         rospy.loginfo('elapsed time {:} ms'.format(int((time.time()-t0)*1000)))
 
+        # just for showing comparison between uniform sampling and wifi sampling (will delete)
+        time.sleep(5)
+
         pose_array = PoseArray()
         pose_array.header.seq = self.seq
         self.seq += 1

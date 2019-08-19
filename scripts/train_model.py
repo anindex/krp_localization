@@ -8,9 +8,9 @@ import numpy as np
 
 rospack = rospkg.RosPack()
 
-train_data_prefix = "test2"
+train_data_prefix = "test3"
 train_data_path   = rospack.get_path('krp_localization') + '/data/'
-save_path         = rospack.get_path('krp_localization') + '/models/model_test2.p'
+save_path         = rospack.get_path('krp_localization') + '/models/model_test3.p'
 
 print('Loading train data path: {}'.format(train_data_path))
 raw_rssi, poses = load_data(file_name=train_data_prefix, file_path=train_data_path) #odometry is not needed
@@ -25,7 +25,7 @@ traindata = PreprocessedData(raw_rssi, flag_negative_db         = False,
                                        flag_mode_filter         = False,
                                        flag_discard_non_pose    = True,
                                        poses                    = poses,
-                                       filter_fuse_measurements = 2)
+                                       filter_fuse_measurements = 1)
 
 distance = np.sum(traindata.data['X'][1:]**2 + traindata.data['X'][:-1]**2 - 2*traindata.data['X'][1:]*traindata.data['X'][:-1],axis=1)**.5
 avg_distance = np.mean(distance)
