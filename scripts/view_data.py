@@ -7,8 +7,6 @@ from matplotlib import cm
 import matplotlib.pyplot as plt
 import numpy as np
 
-from bmpviz import mapviz
-
 rospack = rospkg.RosPack()
 
 map_path = rospack.get_path('krp_localization') + '/maps/test'
@@ -43,7 +41,7 @@ x1   = np.max(traindata.data['X'][:,0])
 y0   = np.min(traindata.data['X'][:,1])
 y1   = np.max(traindata.data['X'][:,1])
 
-macs = (4, 7)
+macs = (8, 11)
 X = traindata.data['X'][:,0]
 Y = traindata.data['X'][:,1]
 
@@ -51,8 +49,6 @@ fig = plt.figure(figsize=(8,8))
 
 for mac in range(macs[0], macs[1] + 1):
     ax = fig.add_subplot(2, 2, mac - macs[0] + 1, projection='3d')
-    bmap = mapviz(root=map_path)
-    bmap.plot(f=fig, ax=ax)
     ax.scatter(X, Y, traindata.data['Y'][:, mac], c='b', marker='o')
 
 plt.show()

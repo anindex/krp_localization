@@ -5,7 +5,7 @@
   <arg name="localization"     default="true" />
 
   <arg name="bag_path"         default="$(find krp_localization)/bags/"/>
-  <arg name="bag_name"         default="test2"/>
+  <arg name="bag_name"         default="test4"/>
 
   <node name="player" pkg="rosbag" type="play" args=" --clock $(arg bag_path)$(arg bag_name).bag">
     <remap from="amcl_pose" to="ref_amcl_pose"/>

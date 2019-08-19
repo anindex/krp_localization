@@ -1,6 +1,6 @@
 <launch>
-  <arg name="train_data_prefix"         default="test3"  />
-  <arg name="trained_model_path"        default="$(find krp_localization)/models/model_test2.p"  />
+  <arg name="train_data_prefix"         default="test4"  />
+  <arg name="trained_model_path"        default="$(find krp_localization)/models/model_test4.p"  />
   <!-- <arg name="map_xmin"         default="-25" />
   <arg name="map_xmax"         default="55"  />
   <arg name="map_ymin"         default="-60" />
@@ -15,11 +15,11 @@
       <param name="trained_model_path"       value="$(arg trained_model_path)" />
       <param name="flag_self_localization"   value="true" />
       <param name="flag_negative_db"         value="true" />
-      <param name="flag_boost_weight"        value="false" />
+      <param name="flag_boost_weight"        value="true" />
       <param name="boost_weight_mode"        value="near_max_scaling" />
       <param name="K"                        value="75" />
       <param name="nsamples"                 value="150" />
-      <param name="mode"                     value="max_gaussian_mean_sampling" />
+      <param name="mode"                     value="prob_mesh_sampling" />
       <param name="max_gaussian_mean_stdX"   value="1" />
       <param name="max_gaussian_mean_stdY"   value="1" />
   </node>

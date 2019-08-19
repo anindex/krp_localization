@@ -8,9 +8,9 @@ import numpy as np
 
 rospack = rospkg.RosPack()
 
-train_data_prefix = "test3"
+train_data_prefix = "test4"
 train_data_path   = rospack.get_path('krp_localization') + '/data/'
-save_path         = rospack.get_path('krp_localization') + '/models/model_test3.p'
+save_path         = rospack.get_path('krp_localization') + '/models/model_test4.p'
 
 print('Loading train data path: {}'.format(train_data_path))
 raw_rssi, poses = load_data(file_name=train_data_prefix, file_path=train_data_path) #odometry is not needed
@@ -18,7 +18,7 @@ raw_rssi, poses = load_data(file_name=train_data_prefix, file_path=train_data_pa
 print('Number of RSSI dataset         : {}'.format(len(raw_rssi)))
 print('Number of AMCL poses           : {}'.format(len(poses)))
 
-traindata = PreprocessedData(raw_rssi, flag_negative_db         = False,
+traindata = PreprocessedData(raw_rssi, flag_negative_db         = True,
                                        flag_min_distance        = False,
                                        flag_fuse_measurements   = True,
                                        flag_min_points_per_AP   = False,

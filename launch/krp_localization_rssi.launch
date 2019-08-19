@@ -17,15 +17,15 @@
     </group>
 
     <node name="rssi_localization_server" pkg="krp_localization" type="rssi_localization_server">
-        <param name="train_data_prefix"        value="test2" />
+        <param name="train_data_prefix"        value="test4" />
         <param name="train_data_fuse"          value="1" />
-        <param name="trained_model_path"       value="$(find krp_localization)/models/model_test2.p" />
+        <param name="trained_model_path"       value="$(find krp_localization)/models/model_test4.p" />
         <param name="flag_self_localization"   value="false" />
-        <param name="flag_negative_db"         value="false" />
+        <param name="flag_negative_db"         value="true" />
         <param name="flag_boost_weight"        value="true" />
         <param name="boost_weight_mode"        value="near_max_scaling" />
         <param name="K"                        value="75" />
-        <param name="mode"                     value="prob_mesh_sampling" />
+        <param name="mode"                     value="max_gaussian_mean_sampling" />
         <param name="max_gaussian_mean_stdX"   value="1" />
         <param name="max_gaussian_mean_stdY"   value="1" />
     </node>
