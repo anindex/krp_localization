@@ -1,10 +1,15 @@
 <launch>
-  
+
+    <arg name="device_name"         default="wlp3s0"  />
+    <arg name="probe_size"          default="3"  />
+    <arg name="mode"                default="nmcli"  />
+    <arg name="freq"                default="2"  />
+
     <node name="rssi_node" pkg="krp_localization" type="rssi_node">
-      <param name="probe_size" value="1"/>
-      <param name="device_name" value="wlx74da38d00733"/>
-      <param name="mode" value="iwlist"/>
-      <param name="freq" value="1"/>
+      <param name="probe_size" value="$(arg probe_size)"/>
+      <param name="device_name" value="$(arg device_name)"/>
+      <param name="mode" value="$(arg mode)"/>
+      <param name="freq" value="$(arg freq)"/>
     </node>
 
 </launch>
