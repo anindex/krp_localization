@@ -4,11 +4,13 @@
     <arg name="visualization"         default="true"/>
     <arg name="global_localization" default="true"/>
 
+    <arg name="bag_name"   default="krp1" />
+
     <group if="$(arg flag_simulation)">
       <include file="$(find krp_localization)/launch/playback.launch">
         <arg name="visualization"  value="false"/>
         <arg name="localization"   value="false" />
-        <arg name="bag_name"   value="krp1" />
+        <arg name="bag_name"       value="krp1" />
       </include>
 
       <include file="$(find youbot_navigation)/launch/separate/amcl.launch"/>
@@ -34,6 +36,7 @@
         <param name="mean_reset_stabilize_time"        value="10"/>
         <param name="std_resample_stabilize_time"      value="2"/>
         <param name="flag_rssi_resampling"             value="false" />
+        <param name="flag_krp_sampling"                value="false" />
         <param name="nsamples"                         value="150"/>
         <param name="rssi_len"                         value="1"/>
         <param name="rssi_weightstd_krp_thres"         value="0.15"/>

@@ -12,7 +12,7 @@ import tf
 
 #ros messages
 from std_msgs.msg import Float64MultiArray, Int32
-from geometry_msgs.msg import PoseArray, Pose, PoseStamped
+from geometry_msgs.msg import PoseArray, Pose, PoseStamped, Twist
 from krp_localization.msg import RSSIData
 
 #ros services
@@ -43,6 +43,7 @@ class KRPWifi():
         self.std_resample_stabilize_time = rospy.get_param('~std_resample_stabilize_time', 2)
 
         self.flag_rssi_resampling = rospy.get_param('~flag_rssi_resampling', True)
+        self.flag_krp_sampling    = rospy.get_param('~flag_krp_sampling', True)
 
         #private
         self.raw_rssi = list()
@@ -55,7 +56,7 @@ class KRPWifi():
         rospy.Subscriber('rssi', RSSIData, self.callback_rssi)
         rospy.Subscriber('particlecloud', PoseArray, self.callback_posearray)
 
-        self.loc_server = rospy.Service(self.ns+'rssi_particle_init', RSSIParticleInit, self.callback_rssi_particle_init)
+        self.loc_server = rospy.Service(self.ns+'global_localization_rssi', RSSIParticleInit, self.global_localization_rssi)
 
         #publishers
         self.pub_pose_array = rospy.Publisher("rssi_poses", PoseArray, queue_size=1)
@@ -63,11 +64,13 @@ class KRPWifi():
         self.pub_pose_best = rospy.Publisher("rssi_pose_best", PoseStamped, queue_size=1)
         #self.pub_pose_weighted = rospy.Publisher("rssi_pose_weighted", PoseStamped, queue_size=1)
 
+        self.pub_twist     = rospy.Publisher('cmd_vel_keyboard', Twist, queue_size=1)
+
 
         if self.global_localization:
             request = RSSIParticleInit()
             request.nsamples = self.nsamples
-            self.callback_rssi_particle_init(request)
+            self.global_localization_rssi(request)
 
         #MAIN LOOP
         r = rospy.Rate(self.freq)
@@ -137,7 +140,7 @@ class KRPWifi():
         prob_mesh.data = loc.prob_mesh
         self.pub_prob_mesh.publish(prob_mesh)
 
-        if meanw < self.rssi_weightmean_krp_thres and self.flag_rssi_mean_reset:
+        if meanw < self.rssi_weightmean_krp_thres and self.flag_rssi_mean_reset and self.flag_krp_sampling:
             rospy.loginfo('KRP detected! Start recovering localization!')
 
             reloc = self.rssi_init(self.nsamples)
@@ -167,7 +170,7 @@ class KRPWifi():
 
         return True
 
-    def callback_rssi_particle_init(self, req):
+    def global_localization_rssi(self, req):
         nsamples = req.nsamples
         loc = False
         t0 = time.time()
@@ -190,6 +193,20 @@ class KRPWifi():
         prob_mesh = Float64MultiArray()
         prob_mesh.data = loc[2]
         self.pub_prob_mesh.publish(prob_mesh)
+
+        # simple robot move for better localization using amcl + laser sensor
+        self.move(0.2, 0, 0, 5)
+        self.move(-0.2, 0, 0, 10)
+        self.move(0.2, 0, 0, 5)
+        self.move(0, 0.2, 0, 2)
+        self.move(0, -0.2, 0, 4)
+        self.move(0, 0.2, 0, 2)
+
+        self.move(0, 0, 0.314, 20)
+        self.move(0, 0, -0.314, 20)
+
+
+
 
     def rssi_init(self, nsamples):
         #sample wifi model for particles
@@ -220,6 +237,22 @@ class KRPWifi():
         poses[:,2] = 2*np.pi*np.random.rand(nsamples)-np.pi
         weights = np.ones(nsamples)
         return [poses, weights.tolist(), loc.prob_mesh]
+
+    def move(self, x, y, rad, duration):
+        twist = Twist()
+        twist.linear.x = x
+        twist.linear.y = y
+        twist.linear.z = 0
+        twist.angular.x = 0
+        twist.angular.y = 0
+        twist.angular.z = rad
+        self.pub_twist.publish(twist)
+        time.sleep(duration)
+
+        twist.linear.x = 0
+        twist.linear.y = 0
+        twist.angular.z = 0
+        self.pub_twist.publish(twist)
 
 if __name__ == '__main__':
     node = KRPWifi()
