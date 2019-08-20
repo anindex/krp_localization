@@ -70,7 +70,7 @@ def accept_reject_uniform(fun, *args, **kwargs):
     npoints  = batch*nsamples
     samples  = np.empty((1,dim))
 
-    reject_thres    = kwargs.get('reject_thres', 0.035)
+    reject_thres    = kwargs.get('reject_thres', 0.06)
 
     _min_x     = min_max[0]*1.0
     _min_y     = min_max[2]*1.0

@@ -140,7 +140,7 @@ class KRPWifi():
         prob_mesh.data = loc.prob_mesh
         self.pub_prob_mesh.publish(prob_mesh)
 
-        if meanw < self.rssi_weightmean_krp_thres and self.flag_rssi_mean_reset and self.flag_krp_sampling:
+        if meanw < self.rssi_weightmean_krp_thres and self.flag_krp_sampling: # and self.flag_rssi_mean_reset
             rospy.loginfo('KRP detected! Start recovering localization!')
 
             reloc = self.rssi_init(self.nsamples)
@@ -154,7 +154,7 @@ class KRPWifi():
 
             self.flag_rssi_mean_reset = False
 
-        elif stdw > self.rssi_weightstd_krp_thres and self.flag_rssi_std_resampling and self.flag_rssi_resampling:
+        elif stdw > self.rssi_weightstd_krp_thres and self.flag_rssi_resampling: #and self.flag_rssi_std_resampling
             rospy.loginfo('RSSI Weight exceeds std threshold! Calling RSSI resampling')
             rs_pose_array, rs_weights = resampling_wheel_pose_array(loc.pose_array, weights, nsamples=weights.shape[0])
 
@@ -198,15 +198,15 @@ class KRPWifi():
         self.pub_prob_mesh.publish(prob_mesh)
 
         # simple robot move for better localization using amcl + laser sensor
-        self.move(0.2, 0, 0, 5)
-        self.move(-0.2, 0, 0, 10)
-        self.move(0.2, 0, 0, 5)
-        self.move(0, 0.2, 0, 2)
-        self.move(0, -0.2, 0, 4)
-        self.move(0, 0.2, 0, 2)
-
         self.move(0, 0, 0.314, 20)
-        self.move(0, 0, -0.314, 20)
+        #self.move(0, 0, -0.314, 20)
+
+        self.move(0.2, 0, 0, 5)
+
+        #self.move(0, 0, 0.314, 10)
+
+        self.move(-0.2, 0, 0, 5)
+        #self.move(0, 0, 0.314, 10)
 
 
 

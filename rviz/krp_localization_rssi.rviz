@@ -3,7 +3,8 @@ Panels:
     Help Height: 78
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /PoseArray1
       Splitter Ratio: 0.5
     Tree Height: 775
   - Class: rviz/Selection
@@ -228,6 +229,22 @@ Visualization Manager:
       Topic: /move_base/local_costmap/costmap
       Unreliable: false
       Use Timestamp: false
+      Value: true
+    - Alpha: 1
+      Arrow Length: 0.300000012
+      Axes Length: 0.300000012
+      Axes Radius: 0.00999999978
+      Class: rviz/PoseArray
+      Color: 0; 255; 0
+      Enabled: true
+      Head Length: 0.0700000003
+      Head Radius: 0.0299999993
+      Name: PoseArray
+      Shaft Length: 0.230000004
+      Shaft Radius: 0.00999999978
+      Shape: Arrow (Flat)
+      Topic: /rssi_loc_server_poses
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:

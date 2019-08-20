@@ -1,0 +1,104 @@
+#!/usr/bin/env python
+from __future__ import print_function
+#standard libraries
+import sys
+import os
+import numpy as np
+import time
+from datetime import datetime
+
+#ros libraries
+import rospy
+import rospkg
+
+#ros messages
+from geometry_msgs.msg import PoseArray, PoseWithCovarianceStamped
+from krp_localization.msg import RSSIData
+from utils.load import save
+
+from nav_msgs.msg import Odometry
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
+
+class Evaluation():
+    def __init__(self):
+        rospy.init_node('evaluation_node', anonymous=True)  #ROS node init
+        rospack = rospkg.RosPack()
+
+        #ROS PARAMSERVER
+        self.ns = rospy.get_namespace()
+        self.file_name_prefix = rospy.get_param('~file_name_prefix', "prob_mesh_train")
+        self.mode = rospy.get_param('~mode', "ref_amcl_pose")
+        self.criteria = rospy.get_param('~criteria', [0.5, 1, 1.5, 2])
+        self.file_path = rospack.get_path('krp_localization') + '/data/evaluations'
+        rospy.loginfo('Save data in folder: {}'.format(self.file_path))
+
+        #lists
+        self.rssi_poses = list()
+        self.ref_amcl_pose = list()
+        self.amcl_pose = list()
+
+        #subscribers
+        rospy.Subscriber('/rssi_loc_server_poses', PoseArray, self.callback_rssi_poses)
+        rospy.Subscriber('/ref_amcl_pose', PoseWithCovarianceStamped, self.callback_ref_amcl_pose)
+        rospy.Subscriber('/amcl_pose', PoseWithCovarianceStamped, self.callback_amcl_pose)
+
+        shutdown = False
+        while (not rospy.is_shutdown()) and (not shutdown):
+            time.sleep(5) #check every 5s
+
+            rospy.loginfo("RSSI poses size: {}".format(len(self.rssi_poses)))
+            rospy.loginfo("Ref AMCL pose size: {}".format(len(self.ref_amcl_pose)))
+            rospy.loginfo("AMCL pose size: {}".format(len(self.amcl_pose)))
+
+            topics = rospy.get_published_topics()
+            #outputs 1 if rss is being published, 0 otherwise
+            active = sum([1 if 'rssi_loc_server_poses' in t[0] else 0 for t in topics])
+            if not active:
+                rospy.loginfo("RSSI Poses Streaming is off! Shutting down recorder...")
+                while not shutdown:
+                    shutdown = self.save_and_shutdown()
+                    time.sleep(1)
+                rospy.signal_shutdown("Shutdown")
+
+    #callbacks
+    def callback_rssi_poses(self,msg):
+        self.rssi_poses.append(msg)
+    def callback_amcl_pose(self,msg):
+        self.amcl_pose.append(msg)
+    def callback_ref_amcl_pose(self,msg):
+        self.ref_amcl_pose.append(msg)
+
+    def save_and_shutdown(self):
+        filepath = self.file_path + '/' + str(datetime.now()) + '/'
+        os.mkdir(filepath)
+        res = [self.criteria]
+
+        for p in self.__dict__[self.mode]:
+            for rssiP in self.rssi_poses:
+                if rssiP.header.stamp > p.header.stamp:
+                    res.append(self.eval(rssiP, p))
+
+        save(res, filepath + self.file_name_prefix + ".p")
+        return True
+
+    def eval(self, pose_array, target_pose):
+        if not pose_array or not target_pose:
+            return
+
+        poses = np.array([[p.position.x, p.position.y] for p in pose_array.poses])
+        target = np.array([target_pose.pose.pose.position.x, target_pose.pose.pose.position.y])
+        dist = np.sort(np.sqrt(np.sum(np.square(poses - target), axis=1)))
+        length = float(len(poses))
+        res = []
+        for c in self.criteria:
+            res.append(np.sum(dist[dist <= c]) / length * 100)
+        return res
+
+
+if __name__ == '__main__':
+    eval = Evaluation()
