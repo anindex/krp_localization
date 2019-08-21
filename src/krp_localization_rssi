@@ -45,6 +45,9 @@ class KRPWifi():
         self.flag_rssi_resampling = rospy.get_param('~flag_rssi_resampling', True)
         self.flag_krp_sampling    = rospy.get_param('~flag_krp_sampling', True)
 
+        self.krp_count = 0
+        self.std_resample_count = 0
+
         #private
         self.raw_rssi = list()
 
@@ -83,11 +86,11 @@ class KRPWifi():
                     self.flag_rssi_mean_reset = True
                     cmean = 0
 
-            if not self.flag_rssi_std_resampling:
-                cstd += 1
-                if cstd % std_resample_num == 0:
-                    self.flag_rssi_std_resampling = True
-                    cstd = 0
+            #if not self.flag_rssi_std_resampling:
+            #    cstd += 1
+            #    if cstd % std_resample_num == 0:
+            #        self.flag_rssi_std_resampling = True
+            #        cstd = 0
 
 
     def callback_rssi(self, rssi):
@@ -140,21 +143,25 @@ class KRPWifi():
         prob_mesh.data = loc.prob_mesh
         self.pub_prob_mesh.publish(prob_mesh)
 
-        if meanw < self.rssi_weightmean_krp_thres and self.flag_krp_sampling: # and self.flag_rssi_mean_reset
-            rospy.loginfo('KRP detected! Start recovering localization!')
+        if meanw < self.rssi_weightmean_krp_thres and self.flag_krp_sampling: # and self.flag_rssi_mean_reset:
+            self.krp_count += 1
+            if self.krp_count % 2 == 0:
+                rospy.loginfo('KRP detected! Start recovering localization!')
 
-            reloc = self.rssi_init(self.nsamples)
-            pose_array = PoseArray()
-            pose_array.header.seq = self.seq
-            self.seq += 1
-            pose_array.header.frame_id  = self.global_frame_id
-            pose_array.header.stamp     = rospy.get_rostime()
-            pose_array.poses    = [pose_from_array_orientation(x) for x in reloc[0]]
-            self.pub_pose_array.publish(pose_array)
+                reloc = self.rssi_init(self.nsamples)
+                pose_array = PoseArray()
+                pose_array.header.seq = self.seq
+                self.seq += 1
+                pose_array.header.frame_id  = self.global_frame_id
+                pose_array.header.stamp     = rospy.get_rostime()
+                pose_array.poses    = [pose_from_array_orientation(x) for x in reloc[0]]
+                self.pub_pose_array.publish(pose_array)
 
-            self.flag_rssi_mean_reset = False
+                self.flag_rssi_mean_reset = False
+                self.krp_count = 0
+                self.std_resample_count = 5
 
-        elif stdw > self.rssi_weightstd_krp_thres and self.flag_rssi_resampling: #and self.flag_rssi_std_resampling
+        elif stdw > self.rssi_weightstd_krp_thres and self.flag_rssi_resampling and self.std_resample_count > 0: #and self.flag_rssi_std_resampling:
             rospy.loginfo('RSSI Weight exceeds std threshold! Calling RSSI resampling')
             rs_pose_array, rs_weights = resampling_wheel_pose_array(loc.pose_array, weights, nsamples=weights.shape[0])
 
@@ -167,6 +174,7 @@ class KRPWifi():
             rospy.loginfo('RSSI after resampling max weights: {}, mean weight: {}, std weight: {}\t'.format(np.max(rs_weights), np.mean(rs_weights), np.std(rs_weights)))
 
             self.flag_rssi_std_resampling = False
+            self.std_resample_count -= 1
 
         return True
 
@@ -175,6 +183,7 @@ class KRPWifi():
         loc = False
         t0 = time.time()
         count = 1
+        self.std_resample_count = 5
         while (not loc):
             rospy.loginfo('RSSI particle initialization attempt {}'.format(count))
             loc = self.rssi_init(nsamples)
@@ -183,7 +192,7 @@ class KRPWifi():
         rospy.loginfo('elapsed time {:} ms'.format(int((time.time()-t0)*1000)))
 
         # just for showing comparison between uniform sampling and wifi sampling (will delete)
-        time.sleep(5)
+        time.sleep(3)
 
         pose_array = PoseArray()
         pose_array.header.seq = self.seq
